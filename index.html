@@ -361,24 +361,9 @@
         }
 
         /* PIN Code Display Styles */
-        .pin-display-section {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .pin-display-section h3 {
-            color: white;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
         .pin-code-display {
-            background: white;
-            color: #f5576c;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            color: white;
             font-size: 72px;
             font-weight: bold;
             padding: 30px;
@@ -390,14 +375,14 @@
         }
 
         .pin-timer {
-            background: rgba(255,255,255,0.3);
+            background: #e9ecef;
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 15px;
         }
 
         .timer-bar {
-            background: white;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
             height: 8px;
             border-radius: 5px;
             margin-bottom: 10px;
@@ -405,15 +390,15 @@
         }
 
         .timer-text {
-            color: white;
+            color: #333;
             font-size: 16px;
             font-weight: 600;
             margin: 0;
         }
 
         .refresh-pin-btn {
-            background: white;
-            color: #f5576c;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            color: white;
             border: none;
             padding: 12px 30px;
             border-radius: 10px;
@@ -425,7 +410,7 @@
 
         .refresh-pin-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(6, 190, 182, 0.4);
         }
     </style>
 </head>
@@ -517,9 +502,9 @@
             </div>
         </div>
 
-        <button class="export-btn" onclick="exportToCSV()">📥 تصدير التفاصيل الكاملة (اسم، رقم، تاريخ، وقت)</button>
+        <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
         
-        <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط</button>
+        <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
         
         <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
 
@@ -527,18 +512,18 @@
             <h3>رمز QR للدخول السريع</h3>
             <div id="qrcode"></div>
             <p class="qr-hint">اطلب من الطلاب مسح الرمز للدخول المباشر</p>
-        </div>
-
-        <!-- PIN Code Display -->
-        <div class="pin-display-section">
-            <h3>🔐 كود التحقق للطلاب</h3>
+            
+            <hr style="border: none; border-top: 2px solid rgba(255,255,255,0.3); margin: 30px 0;">
+            
+            <!-- PIN Code Display -->
+            <h3 style="color: #333; margin-bottom: 20px;">🔐 كود التحقق للطلاب</h3>
             <div class="pin-code-display" id="pinCodeDisplay">----</div>
             <div class="pin-timer">
                 <div class="timer-bar" id="timerBar"></div>
                 <p class="timer-text" id="timerText">باقي -- ثانية</p>
             </div>
             <button class="refresh-pin-btn" onclick="generateNewPIN()">🔄 تحديث الكود الآن</button>
-            <p style="text-align: center; color: white; font-size: 14px; margin-top: 10px;">الكود يتغير تلقائياً كل دقيقة</p>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-top: 10px;">الكود يتغير تلقائياً كل دقيقة</p>
         </div>
 
         <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
@@ -681,10 +666,25 @@
             message.textContent = text;
             message.className = 'message ' + type;
             message.style.display = 'block';
-
-            setTimeout(() => {
+            message.style.cursor = 'pointer';
+            
+            // Clear any existing timeout
+            if (message.timeoutId) {
+                clearTimeout(message.timeoutId);
+            }
+            
+            // Hide after 30 seconds
+            message.timeoutId = setTimeout(() => {
                 message.style.display = 'none';
-            }, 3000);
+            }, 30000);
+            
+            // Allow click to dismiss
+            message.onclick = function() {
+                message.style.display = 'none';
+                if (message.timeoutId) {
+                    clearTimeout(message.timeoutId);
+                }
+            };
         }
 
         function showAdminLogin() {
@@ -726,20 +726,25 @@
         }
 
         // PIN Code Management
+        let currentTimerSeconds = 60;
+        
         function generateRandomPIN() {
             return Math.floor(1000 + Math.random() * 9000).toString();
         }
 
         async function initializePIN() {
-            await generateNewPIN();
+            await generateNewPIN(true); // true = first time initialization
             
             // Auto-generate new PIN every 60 seconds
             window.pinInterval = setInterval(async () => {
-                await generateNewPIN();
+                await generateNewPIN(true); // true = auto refresh, reset timer
             }, 60000);
+            
+            // Start the countdown timer
+            startPINTimer();
         }
 
-        async function generateNewPIN() {
+        async function generateNewPIN(resetTimer = false) {
             const newPIN = generateRandomPIN();
             const timestamp = Date.now();
             
@@ -753,11 +758,11 @@
                 // Update display
                 document.getElementById('pinCodeDisplay').textContent = newPIN;
                 
-                // Reset and restart timer completely
-                if (window.timerInterval) {
-                    clearInterval(window.timerInterval);
+                // Only reset timer if it's auto-refresh or first time
+                if (resetTimer) {
+                    currentTimerSeconds = 60;
                 }
-                startPINTimer();
+                // If manual refresh (button click), timer continues as is
                 
             } catch (error) {
                 console.error('Error generating PIN:', error);
@@ -765,32 +770,27 @@
         }
 
         function startPINTimer() {
-            let secondsLeft = 60;
+            currentTimerSeconds = 60;
             
             // Update immediately
-            document.getElementById('timerText').textContent = `باقي ${secondsLeft} ثانية`;
+            document.getElementById('timerText').textContent = `باقي ${currentTimerSeconds} ثانية`;
             document.getElementById('timerBar').style.width = '100%';
             
             window.timerInterval = setInterval(() => {
-                secondsLeft--;
+                currentTimerSeconds--;
                 
-                if (secondsLeft <= 0) {
-                    secondsLeft = 60;
+                if (currentTimerSeconds <= 0) {
+                    currentTimerSeconds = 60;
                 }
                 
                 // Update timer display
-                document.getElementById('timerText').textContent = `باقي ${secondsLeft} ثانية`;
+                document.getElementById('timerText').textContent = `باقي ${currentTimerSeconds} ثانية`;
                 
                 // Update progress bar
-                const percentage = (secondsLeft / 60) * 100;
+                const percentage = (currentTimerSeconds / 60) * 100;
                 document.getElementById('timerBar').style.width = percentage + '%';
                 
             }, 1000);
-        }
-
-        function resetTimer() {
-            document.getElementById('timerText').textContent = 'باقي 60 ثانية';
-            document.getElementById('timerBar').style.width = '100%';
         }
 
         async function loadAdminPanel() {
