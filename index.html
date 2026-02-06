@@ -715,136 +715,149 @@
         <span id="themeText">الوضع الليلي</span>
     </button>
 
-    <!-- Student Attendance Form -->
-    <div class="container" id="studentView">
-        <div class="header">
-            <div class="logo">📋</div>
-            <h1>نظام الحضور الإلكتروني</h1>
-            <p class="subtitle">سجل حضورك بسرعة وسهولة <span class="online-indicator"></span></p>
-        </div>
-
-        <div class="input-group">
-            <label for="studentName">الاسم الكامل (ثلاثي)</label>
-            <input type="text" id="studentName" placeholder="مثال: محمد أحمد العلي">
-        </div>
-
-        <div class="input-group">
-            <label for="studentId">الرقم الجامعي (8 أرقام)</label>
-            <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
-        </div>
-
-        <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
-
-        <div class="message" id="message"></div>
-
-        <div class="admin-link">
-            <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
-        </div>
-    </div>
-
-    <!-- Admin Login -->
-    <div class="container" id="adminLogin" style="display: none;">
-        <div class="header">
-            <div class="logo">🔐</div>
-            <h1>دخول لوحة التحكم</h1>
-            <p class="subtitle">للدكتور فقط</p>
-        </div>
-
-        <div class="input-group">
-            <label for="adminPassword">كلمة المرور</label>
-            <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
-        </div>
-
-        <button class="btn" onclick="adminLogin()">دخول</button>
-
-        <div class="message" id="loginMessage"></div>
-
-        <div class="admin-link">
-            <a href="#" onclick="showStudentView(); return false;">← العودة لصفحة الطلاب</a>
-        </div>
-    </div>
-
-    <!-- Admin Panel -->
-    <div class="container" id="adminPanel" style="display: none; max-width: 800px;">
-        <div class="header">
-            <div class="logo">📊</div>
-            <h1>لوحة تحكم الدكتور</h1>
-            <p class="subtitle">إدارة الحضور والإحصائيات <span class="online-indicator"></span></p>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" id="totalStudents">0</div>
-                <div class="stat-label">إجمالي الحضور</div>
+    <div id="mainContent">
+        <!-- Student Attendance Form -->
+        <div class="container" id="studentView">
+            <div class="header">
+                <div class="logo">📋</div>
+                <h1>نظام الحضور الإلكتروني</h1>
+                <p class="subtitle">سجل حضورك بسرعة وسهولة <span class="online-indicator"></span></p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="todayDate">-</div>
-                <div class="stat-label">التاريخ</div>
+
+            <div class="input-group">
+                <label for="studentName">الاسم الكامل (ثلاثي)</label>
+                <input type="text" id="studentName" placeholder="مثال: محمد أحمد العلي">
             </div>
-            <div class="stat-card" style="grid-column: 1 / -1;">
-                <div class="stat-number" id="attendanceStatus" style="font-size: 24px;">🔒 مغلق</div>
-                <div class="stat-label">حالة التحضير</div>
+
+            <div class="input-group">
+                <label for="studentId">الرقم الجامعي (8 أرقام)</label>
+                <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
+            </div>
+
+            <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
+
+            <div class="message" id="message"></div>
+
+            <div class="admin-link">
+                <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
             </div>
         </div>
 
-        <div class="attendance-table">
-            <div class="table-header">
-                <div>الاسم</div>
-                <div>الرقم الجامعي</div>
-                <div>الوقت</div>
+        <!-- Admin Login -->
+        <div class="container" id="adminLogin" style="display: none;">
+            <div class="header">
+                <div class="logo">🔐</div>
+                <h1>دخول لوحة التحكم</h1>
+                <p class="subtitle">للدكتور فقط</p>
             </div>
-            <div id="attendanceTableBody">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>جاري تحميل البيانات...</p>
+
+            <div class="input-group">
+                <label for="adminPassword">كلمة المرور</label>
+                <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
+            </div>
+
+            <button class="btn" onclick="adminLogin()">دخول</button>
+
+            <div class="message" id="loginMessage"></div>
+
+            <div class="admin-link">
+                <a href="#" onclick="showStudentView(); return false;">← العودة لصفحة الطلاب</a>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="container" id="adminPanel" style="display: none; max-width: 800px;">
+            <div class="header">
+                <div class="logo">📊</div>
+                <h1>لوحة تحكم الدكتور</h1>
+                <p class="subtitle">إدارة الحضور والإحصائيات <span class="online-indicator"></span></p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStudents">0</div>
+                    <div class="stat-label">إجمالي الحضور</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="todayDate">-</div>
+                    <div class="stat-label">التاريخ</div>
+                </div>
+                <div class="stat-card" style="grid-column: 1 / -1;">
+                    <div class="stat-number" id="attendanceStatus" style="font-size: 24px;">🔒 مغلق</div>
+                    <div class="stat-label">حالة التحضير</div>
                 </div>
             </div>
-        </div>
 
-        <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
-        
-        <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
-        
-        <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
-        
-        <button class="export-btn" onclick="openAttendance()" style="background:#28a745; margin-top:10px">
-            🟢 فتح التحضير
-        </button>
-
-        <button class="export-btn" onclick="closeAttendance()" style="background:#6c757d; margin-top:10px">
-            🔒 إغلاق التحضير
-        </button>
-
-        <!-- قسم QR المتجدد -->
-        <div class="qr-container">
-            <h3 class="qr-title">📱 QR Code المتجدد</h3>
-            <div id="dynamicQRCode" class="qr-code-wrapper"></div>
-            <div class="qr-timer-section">
-                <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">10</span> ثانية</p>
-                <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 10 ثواني</p>
+            <div class="attendance-table">
+                <div class="table-header">
+                    <div>الاسم</div>
+                    <div>الرقم الجامعي</div>
+                    <div>الوقت</div>
+                </div>
+                <div id="attendanceTableBody">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>جاري تحميل البيانات...</p>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+            <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
+            
+            <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
+            
+            <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
+            
+            <button class="export-btn" onclick="openAttendance()" style="background:#28a745; margin-top:10px">
+                🟢 فتح التحضير
+            </button>
+
+            <button class="export-btn" onclick="closeAttendance()" style="background:#6c757d; margin-top:10px">
+                🔒 إغلاق التحضير
+            </button>
+
+            <!-- قسم QR المتجدد -->
+            <div class="qr-container">
+                <h3 class="qr-title">📱 QR Code المتجدد</h3>
+                <div id="dynamicQRCode" class="qr-code-wrapper"></div>
+                <div class="qr-timer-section">
+                    <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">10</span> ثانية</p>
+                    <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 10 ثواني</p>
+                </div>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+        </div>
     </div>
 
     <script>
         // Admin password
         const ADMIN_PASSWORD = "D123321";
         
+        // حفظ الدوال العامة في النطاق العام
+        window.showAdminLogin = function() {
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+                document.getElementById('studentView').style.display = 'none';
+                document.getElementById('adminLogin').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            } else {
+                // إذا تم استبدال المحتوى، نعيد تحميل الصفحة مع معامل خاص
+                window.location.href = window.location.pathname + '?admin=1';
+            }
+        };
+
+        window.showStudentView = function() {
+            document.getElementById('studentView').style.display = 'block';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+        };
+        
         async function recordAttendance() {
             // التحقق من فتح التحضير
             const isOpen = await checkAttendanceOpen();
             if (!isOpen) {
-                document.body.innerHTML = `
-                    <div style="text-align:center;margin-top:100px;padding:20px;">
-                        <h1 style="font-size:80px;margin:0;">🔒</h1>
-                        <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
-                        <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
-                        <br>
-                        <a href="#" onclick="showAdminLogin()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
-                    </div>
-                `;
+                showBlockedMessage();
                 return;
             }
 
@@ -962,16 +975,19 @@
             };
         }
 
-        function showAdminLogin() {
-            document.getElementById('studentView').style.display = 'none';
-            document.getElementById('adminLogin').style.display = 'block';
-            document.getElementById('adminPanel').style.display = 'none';
-        }
-
-        function showStudentView() {
-            document.getElementById('studentView').style.display = 'block';
-            document.getElementById('adminLogin').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none';
+        function showBlockedMessage() {
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+                mainContent.innerHTML = `
+                    <div class="container" style="text-align:center;">
+                        <h1 style="font-size:80px;margin:0;">🔒</h1>
+                        <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                        <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                        <br>
+                        <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                    </div>
+                `;
+            }
         }
 
         /* ==================== نظام التبديل بين الأوضاع ==================== */
@@ -1297,43 +1313,50 @@
         /* التحقق من صلاحية QR عند دخول الطالب */
         const params = new URLSearchParams(window.location.search);
         const urlToken = params.get("token");
+        const adminParam = params.get("admin");
         
+        // إذا المستخدم طلب دخول الدكتور
+        if (adminParam === '1') {
+            showAdminLogin();
+        }
         // حماية قوية: لازم يكون في token (QR Code)
-        if (!urlToken) {
-            // السماح فقط بصفحات الدكتور
-            const currentPath = window.location.pathname;
-            const isRootOrIndex = currentPath === '/' || currentPath.endsWith('index.html') || currentPath === '';
-            
+        else if (!urlToken) {
             // منع الوصول المباشر - لازم QR Code
             (async () => {
                 const isOpen = await checkAttendanceOpen();
-                document.body.innerHTML = `
-                    <div style="text-align:center;margin-top:100px;padding:20px;">
-                        <h1 style="font-size:80px;margin:0;">📱</h1>
-                        <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
-                        <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
-                        ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
-                        <br>
-                        <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
-                        <br><br>
-                        <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
-                    </div>
-                `;
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    mainContent.innerHTML = `
+                        <div class="container" style="text-align:center;">
+                            <h1 style="font-size:80px;margin:0;">📱</h1>
+                            <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
+                            <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
+                            ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
+                            <br>
+                            <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
+                            <br><br>
+                            <a href="#" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
+                        </div>
+                    `;
+                }
             })();
         } else {
             // إذا في token، نتحقق من صلاحيته
             (async () => {
                 const isOpen = await checkAttendanceOpen();
                 if (!isOpen) {
-                    document.body.innerHTML = `
-                        <div style="text-align:center;margin-top:100px;padding:20px;">
-                            <h1 style="font-size:80px;margin:0;">🔒</h1>
-                            <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
-                            <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
-                            <br>
-                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
-                        </div>
-                    `;
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) {
+                        mainContent.innerHTML = `
+                            <div class="container" style="text-align:center;">
+                                <h1 style="font-size:80px;margin:0;">🔒</h1>
+                                <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                                <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                                <br>
+                                <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                            </div>
+                        `;
+                    }
                     return;
                 }
                 
@@ -1341,15 +1364,16 @@
                 const currentToken = generateToken();
                 // سماحية دورة واحدة فقط
                 if (Math.abs(currentToken - urlToken) > 1) {
-                    document.body.innerHTML = `
-                        <div style="text-align:center;margin-top:100px;padding:20px;">
-                            <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
-                            <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
-                            <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
-                            <br>
-                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
-                        </div>
-                    `;
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) {
+                        mainContent.innerHTML = `
+                            <div class="container" style="text-align:center;">
+                                <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                                <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                                <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                            </div>
+                        `;
+                    }
                     return;
                 }
                 
@@ -1358,16 +1382,17 @@
                 const hasRegistered = localStorage.getItem('attendance_registered_' + deviceId);
                 
                 if (hasRegistered) {
-                    document.body.innerHTML = `
-                        <div style="text-align:center;margin-top:100px;padding:20px;">
-                            <h1 style="font-size:80px;margin:0;">✅</h1>
-                            <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
-                            <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
-                            <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
-                            <br>
-                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
-                        </div>
-                    `;
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) {
+                        mainContent.innerHTML = `
+                            <div class="container" style="text-align:center;">
+                                <h1 style="font-size:80px;margin:0;">✅</h1>
+                                <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
+                                <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
+                                <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
+                            </div>
+                        `;
+                    }
                 }
             })();
         }
