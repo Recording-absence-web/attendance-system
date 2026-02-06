@@ -1311,91 +1311,94 @@
         }
         
         /* التحقق من صلاحية QR عند دخول الطالب */
-        const params = new URLSearchParams(window.location.search);
-        const urlToken = params.get("token");
-        const adminParam = params.get("admin");
-        
-        // إذا المستخدم طلب دخول الدكتور
-        if (adminParam === '1') {
-            showAdminLogin();
-        }
-        // حماية قوية: لازم يكون في token (QR Code)
-        else if (!urlToken) {
-            // منع الوصول المباشر - لازم QR Code
-            (async () => {
-                const isOpen = await checkAttendanceOpen();
-                const mainContent = document.getElementById('mainContent');
-                if (mainContent) {
-                    mainContent.innerHTML = `
-                        <div class="container" style="text-align:center;">
-                            <h1 style="font-size:80px;margin:0;">📱</h1>
-                            <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
-                            <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
-                            ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
-                            <br>
-                            <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
-                            <br><br>
-                            <a href="#" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
-                        </div>
-                    `;
-                }
-            })();
-        } else {
-            // إذا في token، نتحقق من صلاحيته
-            (async () => {
-                const isOpen = await checkAttendanceOpen();
-                if (!isOpen) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const urlToken = params.get("token");
+            const adminParam = params.get("admin");
+            
+            // إذا المستخدم طلب دخول الدكتور
+            if (adminParam === '1') {
+                showAdminLogin();
+                return;
+            }
+            // حماية قوية: لازم يكون في token (QR Code)
+            else if (!urlToken) {
+                // منع الوصول المباشر - لازم QR Code
+                (async () => {
+                    const isOpen = await checkAttendanceOpen();
                     const mainContent = document.getElementById('mainContent');
                     if (mainContent) {
                         mainContent.innerHTML = `
                             <div class="container" style="text-align:center;">
-                                <h1 style="font-size:80px;margin:0;">🔒</h1>
-                                <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
-                                <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                                <h1 style="font-size:80px;margin:0;">📱</h1>
+                                <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
+                                <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
+                                ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
                                 <br>
-                                <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                                <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
+                                <br><br>
+                                <a href="#" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
                             </div>
                         `;
                     }
-                    return;
-                }
-                
-                // ثم التحقق من صلاحية QR Token
-                const currentToken = generateToken();
-                // سماحية دورة واحدة فقط
-                if (Math.abs(currentToken - urlToken) > 1) {
-                    const mainContent = document.getElementById('mainContent');
-                    if (mainContent) {
-                        mainContent.innerHTML = `
-                            <div class="container" style="text-align:center;">
-                                <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
-                                <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
-                                <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
-                            </div>
-                        `;
+                })();
+            } else {
+                // إذا في token، نتحقق من صلاحيته
+                (async () => {
+                    const isOpen = await checkAttendanceOpen();
+                    if (!isOpen) {
+                        const mainContent = document.getElementById('mainContent');
+                        if (mainContent) {
+                            mainContent.innerHTML = `
+                                <div class="container" style="text-align:center;">
+                                    <h1 style="font-size:80px;margin:0;">🔒</h1>
+                                    <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                                    <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                                    <br>
+                                    <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                                </div>
+                            `;
+                        }
+                        return;
                     }
-                    return;
-                }
-                
-                // التحقق من التسجيل السابق على نفس الجهاز
-                const deviceId = getDeviceId();
-                const hasRegistered = localStorage.getItem('attendance_registered_' + deviceId);
-                
-                if (hasRegistered) {
-                    const mainContent = document.getElementById('mainContent');
-                    if (mainContent) {
-                        mainContent.innerHTML = `
-                            <div class="container" style="text-align:center;">
-                                <h1 style="font-size:80px;margin:0;">✅</h1>
-                                <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
-                                <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
-                                <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
-                            </div>
-                        `;
+                    
+                    // ثم التحقق من صلاحية QR Token
+                    const currentToken = generateToken();
+                    // سماحية دورة واحدة فقط
+                    if (Math.abs(currentToken - urlToken) > 1) {
+                        const mainContent = document.getElementById('mainContent');
+                        if (mainContent) {
+                            mainContent.innerHTML = `
+                                <div class="container" style="text-align:center;">
+                                    <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                                    <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                                    <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                                </div>
+                            `;
+                        }
+                        return;
                     }
-                }
-            })();
-        }
+                    
+                    // التحقق من التسجيل السابق على نفس الجهاز
+                    const deviceId = getDeviceId();
+                    const hasRegistered = localStorage.getItem('attendance_registered_' + deviceId);
+                    
+                    if (hasRegistered) {
+                        const mainContent = document.getElementById('mainContent');
+                        if (mainContent) {
+                            mainContent.innerHTML = `
+                                <div class="container" style="text-align:center;">
+                                    <h1 style="font-size:80px;margin:0;">✅</h1>
+                                    <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
+                                    <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
+                                    <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
+                                </div>
+                            `;
+                        }
+                    }
+                })();
+            }
+        });
         
         /* دالة توليد معرف فريد للجهاز */
         function getDeviceId() {
