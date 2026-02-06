@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام الحضور الإلكتروني</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
+    <!-- مكتبة توليد QR -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
     
     <!-- Firebase SDK - Compat Version -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
-
+    
     <script>
         // Firebase configuration - UPDATED
         const firebaseConfig = {
@@ -298,31 +299,52 @@
             background: #5a6268;
         }
 
-        .qr-section {
-            margin-top: 30px;
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
+        /* قسم QR المتجدد */
+        .qr-container {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            padding: 30px;
             border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(6, 190, 182, 0.3);
         }
 
-        .qr-section h3 {
-            margin-bottom: 15px;
-            color: #333;
+        .qr-title {
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
-        #qrcode {
+        .qr-code-wrapper {
             display: inline-block;
             padding: 15px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-timer-section {
+            margin-top: 20px;
+        }
+
+        .qr-timer-text {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .qr-timer-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .qr-hint {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #666;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-top: 10px;
         }
 
         .loading {
@@ -361,61 +383,338 @@
             50% { opacity: 0.5; }
         }
 
-        /* PIN Code Display Styles */
-        .pin-code-display {
+        /* ==================== زر التبديل ==================== */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
             background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
-            color: white;
-            font-size: 72px;
-            font-weight: bold;
-            padding: 30px;
-            border-radius: 15px;
-            letter-spacing: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-family: 'Courier New', monospace;
-        }
-
-        .pin-timer {
-            background: #e9ecef;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .timer-bar {
-            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
-            height: 8px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            transition: width 1s linear;
-        }
-
-        .timer-text {
-            color: #333;
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .refresh-pin-btn {
-            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
-            color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(6, 190, 182, 0.4);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 190, 182, 0.6);
         }
 
-        .refresh-pin-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(6, 190, 182, 0.4);
+        /* ==================== الدارك مود ==================== */
+        body.dark-mode {
+            background: #0a0e27;
         }
+        
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            animation: glow 15s infinite;
+            z-index: 0;
+        }
+        
+        body.dark-mode::after {
+            content: '';
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+            bottom: -250px;
+            left: -250px;
+            animation: glow 20s infinite reverse;
+            z-index: 0;
+        }
+        
+        @keyframes glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        body.dark-mode .theme-toggle {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            color: #0a0e27;
+        }
+
+        body.dark-mode .container {
+            background: rgba(20, 25, 45, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .logo {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        body.dark-mode h1 {
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        body.dark-mode .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode label {
+            color: #00ffff;
+        }
+
+        body.dark-mode input {
+            background: rgba(10, 15, 35, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            color: white;
+        }
+
+        body.dark-mode input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        body.dark-mode input:focus {
+            border-color: #00ffff;
+            background: rgba(10, 15, 35, 0.8);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .btn {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            color: #0a0e27;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+        }
+
+        body.dark-mode .btn:hover {
+            box-shadow: 0 0 35px rgba(0, 255, 255, 0.6);
+        }
+
+        body.dark-mode .btn:disabled {
+            opacity: 0.5;
+        }
+
+        body.dark-mode .message {
+            backdrop-filter: blur(10px);
+        }
+
+        body.dark-mode .success {
+            background: rgba(0, 255, 100, 0.15);
+            color: #00ff64;
+            border: 2px solid rgba(0, 255, 100, 0.3);
+        }
+
+        body.dark-mode .error {
+            background: rgba(255, 0, 100, 0.15);
+            color: #ff0064;
+            border: 2px solid rgba(255, 0, 100, 0.3);
+        }
+
+        body.dark-mode .admin-link a {
+            color: #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .admin-link a:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .stat-card {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        body.dark-mode .stat-number {
+            color: #00ffff;
+        }
+
+        body.dark-mode .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        body.dark-mode .attendance-table {
+            background: rgba(10, 15, 35, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        body.dark-mode .table-header {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+        }
+
+        body.dark-mode .table-row {
+            background: rgba(20, 25, 45, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.1);
+            color: white;
+        }
+
+        body.dark-mode .table-row:hover {
+            background: rgba(0, 255, 255, 0.05);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .time-badge {
+            background: rgba(0, 255, 255, 0.15);
+            color: #00ffff;
+        }
+
+        body.dark-mode .export-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
+            color: #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .export-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .logout-btn {
+            background: rgba(138, 43, 226, 0.3);
+            color: #8a2be2;
+            border: 1px solid rgba(138, 43, 226, 0.5);
+        }
+
+        body.dark-mode .logout-btn:hover {
+            background: rgba(138, 43, 226, 0.4);
+        }
+
+        /* قسم QR في الدارك مود */
+        body.dark-mode .qr-container {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        body.dark-mode .qr-title {
+            color: #00ffff;
+        }
+
+        body.dark-mode .qr-code-wrapper {
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .qr-timer-text {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .qr-timer-number {
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        body.dark-mode .qr-hint {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                max-width: 100%;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                left: 10px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            #themeText {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-number {
+                font-size: 28px;
+            }
+
+            .table-header,
+            .table-row {
+                grid-template-columns: 2fr 2fr 1fr;
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .qr-container {
+                padding: 20px;
+                margin-top: 15px;
+            }
+
+            .qr-title {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+
+            .qr-code-wrapper {
+                padding: 10px;
+            }
+
+            #dynamicQRCode img {
+                width: 180px !important;
+                height: 180px !important;
+            }
+
+            .qr-timer-text {
+                font-size: 16px;
+            }
+
+            .qr-timer-number {
+                font-size: 28px;
+            }
+
+            .qr-hint {
+                font-size: 12px;
+            }
+
+            .export-btn {
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .attendance-table {
+                max-height: 300px;
+            }
+        }
+
     </style>
+
 </head>
 <body>
+    <!-- زر التبديل بين الأوضاع -->
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">الوضع الليلي</span>
+    </button>
+
     <!-- Student Attendance Form -->
     <div class="container" id="studentView">
         <div class="header">
@@ -432,11 +731,6 @@
         <div class="input-group">
             <label for="studentId">الرقم الجامعي (8 أرقام)</label>
             <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
-        </div>
-
-        <div class="input-group">
-            <label for="pinCode">كود التحقق (من الدكتور) 🔐</label>
-            <input type="text" id="pinCode" placeholder="أدخل الكود المعروض في القاعة" maxlength="4" pattern="\d*" inputmode="numeric" style="text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 8px;">
         </div>
 
         <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
@@ -509,22 +803,14 @@
         
         <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
 
-        <div class="qr-section">
-            <h3>رمز QR للدخول السريع</h3>
-            <div id="qrcode"></div>
-            <p class="qr-hint">اطلب من الطلاب مسح الرمز للدخول المباشر</p>
-            
-            <hr style="border: none; border-top: 2px solid rgba(255,255,255,0.3); margin: 30px 0;">
-            
-            <!-- PIN Code Display -->
-            <h3 style="color: #333; margin-bottom: 20px;">🔐 كود التحقق للطلاب</h3>
-            <div class="pin-code-display" id="pinCodeDisplay">----</div>
-            <div class="pin-timer">
-                <div class="timer-bar" id="timerBar"></div>
-                <p class="timer-text" id="timerText">باقي -- ثانية</p>
+        <!-- قسم QR المتجدد -->
+        <div class="qr-container">
+            <h3 class="qr-title">📱 QR Code المتجدد</h3>
+            <div id="dynamicQRCode" class="qr-code-wrapper"></div>
+            <div class="qr-timer-section">
+                <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">10</span> ثانية</p>
+                <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 10 ثواني</p>
             </div>
-            <button class="refresh-pin-btn" onclick="generateNewPIN()">🔄 تحديث الكود الآن</button>
-            <p style="text-align: center; color: #666; font-size: 14px; margin-top: 10px;">الكود يتغير تلقائياً كل دقيقة</p>
         </div>
 
         <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
@@ -537,7 +823,6 @@
         async function recordAttendance() {
             const studentName = document.getElementById('studentName').value.trim();
             const studentId = document.getElementById('studentId').value.trim();
-            const pinCode = document.getElementById('pinCode').value.trim();
             const message = document.getElementById('message');
             const submitBtn = document.getElementById('submitBtn');
             
@@ -564,51 +849,9 @@
                 return;
             }
 
-            // Validate PIN code
-            if (!pinCode) {
-                showMessage('⚠️ الرجاء إدخال كود التحقق المعروض في القاعة', 'error', 'message');
-                return;
-            }
-
-            if (!/^\d{4}$/.test(pinCode)) {
-                showMessage('⚠️ كود التحقق يجب أن يتكون من 4 أرقام', 'error', 'message');
-                return;
-            }
-
             try {
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'جاري التحقق...';
-
-                // Get current valid PIN from Firebase
-                const pinDoc = await db.collection('system').doc('currentPIN').get();
-                
-                if (!pinDoc.exists) {
-                    showMessage('❌ خطأ في النظام. الرجاء إبلاغ الدكتور.', 'error', 'message');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '✓ تسجيل الحضور';
-                    return;
-                }
-
-                const validPIN = pinDoc.data().code;
-                const pinTimestamp = pinDoc.data().timestamp;
-                
-                // Check if PIN is still valid (within 1 minute)
-                const now = Date.now();
-                const pinAge = now - pinTimestamp;
-                
-                if (pinAge > 60000) { // More than 1 minute old
-                    showMessage('❌ كود التحقق منتهي الصلاحية. اطلب الكود الجديد من الدكتور.', 'error', 'message');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '✓ تسجيل الحضور';
-                    return;
-                }
-
-                if (pinCode !== validPIN) {
-                    showMessage('❌ كود التحقق غير صحيح! تأكد من الكود المعروض في القاعة.', 'error', 'message');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '✓ تسجيل الحضور';
-                    return;
-                }
+                submitBtn.textContent = 'جاري التسجيل...';
 
                 // Check if already registered
                 const querySnapshot = await db.collection('attendance').get();
@@ -651,7 +894,6 @@
                 showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
                 document.getElementById('studentName').value = '';
                 document.getElementById('studentId').value = '';
-                document.getElementById('pinCode').value = '';
                 
             } catch (error) {
                 console.error('Error recording attendance:', error);
@@ -700,6 +942,38 @@
             document.getElementById('adminPanel').style.display = 'none';
         }
 
+        /* ==================== نظام التبديل بين الأوضاع ==================== */
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'الوضع النهاري';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'الوضع الليلي';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // تحميل الثيم المحفوظ عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'الوضع النهاري';
+            }
+        });
+
         async function adminLogin() {
             const password = document.getElementById('adminPassword').value;
             
@@ -707,9 +981,9 @@
                 document.getElementById('adminLogin').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
                 await loadAdminPanel();
-                generateQRCode();
-                await initializePIN();
-                startPINTimer();
+                
+                // تشغيل نظام QR المتجدد
+                startDynamicQR();
             } else {
                 showMessage('❌ كلمة المرور غير صحيحة', 'error', 'loginMessage');
             }
@@ -717,81 +991,11 @@
 
         function logout() {
             document.getElementById('adminPassword').value = '';
-            if (window.pinInterval) {
-                clearInterval(window.pinInterval);
-            }
-            if (window.timerInterval) {
-                clearInterval(window.timerInterval);
+            // إيقاف QR المتجدد عند الخروج
+            if (qrInterval) {
+                clearInterval(qrInterval);
             }
             showStudentView();
-        }
-
-        // PIN Code Management
-        let currentTimerSeconds = 60;
-        
-        function generateRandomPIN() {
-            return Math.floor(1000 + Math.random() * 9000).toString();
-        }
-
-        async function initializePIN() {
-            await generateNewPIN(true); // true = first time initialization
-            
-            // Auto-generate new PIN every 60 seconds
-            window.pinInterval = setInterval(async () => {
-                await generateNewPIN(true); // true = auto refresh, reset timer
-            }, 60000);
-            
-            // Start the countdown timer
-            startPINTimer();
-        }
-
-        async function generateNewPIN(resetTimer = false) {
-            const newPIN = generateRandomPIN();
-            const timestamp = Date.now();
-            
-            try {
-                // Save to Firebase
-                await db.collection('system').doc('currentPIN').set({
-                    code: newPIN,
-                    timestamp: timestamp
-                });
-                
-                // Update display
-                document.getElementById('pinCodeDisplay').textContent = newPIN;
-                
-                // Only reset timer if it's auto-refresh or first time
-                if (resetTimer) {
-                    currentTimerSeconds = 60;
-                }
-                // If manual refresh (button click), timer continues as is
-                
-            } catch (error) {
-                console.error('Error generating PIN:', error);
-            }
-        }
-
-        function startPINTimer() {
-            currentTimerSeconds = 60;
-            
-            // Update immediately
-            document.getElementById('timerText').textContent = `باقي ${currentTimerSeconds} ثانية`;
-            document.getElementById('timerBar').style.width = '100%';
-            
-            window.timerInterval = setInterval(() => {
-                currentTimerSeconds--;
-                
-                if (currentTimerSeconds <= 0) {
-                    currentTimerSeconds = 60;
-                }
-                
-                // Update timer display
-                document.getElementById('timerText').textContent = `باقي ${currentTimerSeconds} ثانية`;
-                
-                // Update progress bar
-                const percentage = (currentTimerSeconds / 60) * 100;
-                document.getElementById('timerBar').style.width = percentage + '%';
-                
-            }, 1000);
         }
 
         async function loadAdminPanel() {
@@ -835,22 +1039,6 @@
                     <div class="time-badge">${record.time}</div>
                 `;
                 tableBody.appendChild(row);
-            });
-        }
-
-        function generateQRCode() {
-            const qrcodeContainer = document.getElementById('qrcode');
-            qrcodeContainer.innerHTML = '';
-            
-            const currentURL = window.location.href.split('#')[0];
-            
-            new QRCode(qrcodeContainer, {
-                text: currentURL,
-                width: 200,
-                height: 200,
-                colorDark: "#06beb6",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
             });
         }
 
@@ -940,7 +1128,7 @@
         // Allow Enter key to submit
         document.getElementById('studentId').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                document.getElementById('pinCode').focus();
+                recordAttendance();
             }
         });
 
@@ -950,86 +1138,83 @@
             }
         });
 
-        document.getElementById('pinCode').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                recordAttendance();
-            }
-        });
-
         document.getElementById('adminPassword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 adminLogin();
             }
         });
+
+        /* ================== نظام QR المتجدد ================== */
+        const QR_CHANGE_TIME = 10;          // مدة صلاحية QR بالثواني
+        const QR_DOCTOR_PASSWORD = "D123321";  // نفس كلمة سر لوحة التحكم
+        
+        let qrInterval;
+        let qrTimeLeft = QR_CHANGE_TIME;
+        
+        /* توليد Token بناءً على الوقت الحالي */
+        function generateToken() {
+            return Math.floor(Date.now() / (QR_CHANGE_TIME * 1000));
+        }
+        
+        /* توليد QR Code جديد */
+        function generateDynamicQR() {
+            const qrDiv = document.getElementById("dynamicQRCode");
+            if (!qrDiv) return;
+            
+            qrDiv.innerHTML = "";
+            const token = generateToken();
+            const url = window.location.origin + window.location.pathname + "?token=" + token;
+            
+            // تحديد حجم QR بناءً على حجم الشاشة
+            const isMobile = window.innerWidth <= 600;
+            const qrSize = isMobile ? 180 : 220;
+            
+            new QRCode(qrDiv, {
+                text: url,
+                width: qrSize,
+                height: qrSize,
+                colorDark: "#06beb6",
+                colorLight: "#ffffff"
+            });
+        }
+        
+        /* بدء نظام QR المتجدد */
+        function startDynamicQR() {
+            clearInterval(qrInterval);
+            qrTimeLeft = QR_CHANGE_TIME;
+            generateDynamicQR();
+            
+            qrInterval = setInterval(() => {
+                qrTimeLeft--;
+                const timerEl = document.getElementById("qrTimer");
+                if (timerEl) {
+                    timerEl.innerText = qrTimeLeft;
+                }
+                
+                if (qrTimeLeft <= 0) {
+                    generateDynamicQR();
+                    qrTimeLeft = QR_CHANGE_TIME;
+                }
+            }, 1000);
+        }
+        
+        /* التحقق من صلاحية QR عند دخول الطالب */
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get("token");
+        
+        if (urlToken) {
+            const currentToken = generateToken();
+            // سماحية دورة واحدة فقط
+            if (Math.abs(currentToken - urlToken) > 1) {
+                document.body.innerHTML = `
+                    <div style="text-align:center;margin-top:100px;">
+                        <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                        <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                        <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                    </div>
+                `;
+            }
+        }
     </script>
-
-    <!-- لوحة الدكتور -->
-<div id="doctorPanel" style="display:none; text-align:center; margin-top:30px;">
-  <h2>📊 لوحة الدكتور</h2>
-  <div id="qrcode"></div>
-  <p>⏳ يتغير خلال:</p>
-  <div id="timer" style="font-size:24px; color:red;">10</div>
-</div>
-
-
-<script>
-/* ========= الإعدادات ========= */
-const CHANGE_TIME = 10; // كل كم ثانية يتغير
-const DOCTOR_PASSWORD = "1234"; // غيّرها
-
-/* ========= لوحة الدكتور ========= */
-function openDoctorPanel() {
-  const pass = prompt("أدخل كلمة مرور لوحة الدكتور:");
-  if (pass !== DOCTOR_PASSWORD) return;
-
-  document.getElementById("doctorPanel").style.display = "block";
-  startQR();
-}
-
-/* ========= QR ========= */
-let timeLeft = CHANGE_TIME;
-let qr;
-
-function generateToken() {
-  return Math.floor(Date.now() / (CHANGE_TIME * 1000));
-}
-
-function generateQR() {
-  const qrDiv = document.getElementById("qrcode");
-  qrDiv.innerHTML = "";
-
-  const token = generateToken();
-  const url = `${window.location.origin}${window.location.pathname}?token=${token}`;
-
-  qr = new QRCode(qrDiv, url);
-}
-
-function startQR() {
-  generateQR();
-  setInterval(() => {
-    timeLeft--;
-    document.getElementById("timer").innerText = timeLeft;
-
-    if (timeLeft <= 0) {
-      generateQR();
-      timeLeft = CHANGE_TIME;
-    }
-  }, 1000);
-}
-
-/* ========= التحقق للطلاب ========= */
-const params = new URLSearchParams(window.location.search);
-const token = params.get("token");
-
-if (token) {
-  const currentToken = generateToken();
-  if (Math.abs(currentToken - token) > 1) {
-    document.body.innerHTML = "<h2>⏰ انتهت صلاحية الكود</h2>";
-  }
-}
-</script>
-
-
-    
 </body>
 </html>
