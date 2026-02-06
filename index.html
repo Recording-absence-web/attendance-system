@@ -26,6 +26,25 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        
+        // ==================== تعريف الدوال العامة مباشرة ====================
+        window.showAdminLogin = function() {
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+                document.getElementById('studentView').style.display = 'none';
+                document.getElementById('adminLogin').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            } else {
+                // إذا تم استبدال المحتوى، نعيد تحميل الصفحة مع معامل خاص
+                window.location.href = window.location.pathname + '?admin=1';
+            }
+        };
+
+        window.showStudentView = function() {
+            document.getElementById('studentView').style.display = 'block';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+        };
     </script>
     
     <style>
@@ -833,25 +852,6 @@
     <script>
         // Admin password
         const ADMIN_PASSWORD = "D123321";
-        
-        // حفظ الدوال العامة في النطاق العام
-        window.showAdminLogin = function() {
-            const mainContent = document.getElementById('mainContent');
-            if (mainContent) {
-                document.getElementById('studentView').style.display = 'none';
-                document.getElementById('adminLogin').style.display = 'block';
-                document.getElementById('adminPanel').style.display = 'none';
-            } else {
-                // إذا تم استبدال المحتوى، نعيد تحميل الصفحة مع معامل خاص
-                window.location.href = window.location.pathname + '?admin=1';
-            }
-        };
-
-        window.showStudentView = function() {
-            document.getElementById('studentView').style.display = 'block';
-            document.getElementById('adminLogin').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none';
-        };
         
         async function recordAttendance() {
             // التحقق من فتح التحضير
