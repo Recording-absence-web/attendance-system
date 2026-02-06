@@ -9,7 +9,8 @@
     <!-- Firebase SDK - Compat Version -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
     <script>
         // Firebase configuration - UPDATED
         const firebaseConfig = {
@@ -961,5 +962,74 @@
             }
         });
     </script>
+
+    <!-- لوحة الدكتور -->
+<div id="doctorPanel" style="display:none; text-align:center; margin-top:30px;">
+  <h2>📊 لوحة الدكتور</h2>
+  <div id="qrcode"></div>
+  <p>⏳ يتغير خلال:</p>
+  <div id="timer" style="font-size:24px; color:red;">10</div>
+</div>
+
+
+<script>
+/* ========= الإعدادات ========= */
+const CHANGE_TIME = 10; // كل كم ثانية يتغير
+const DOCTOR_PASSWORD = "1234"; // غيّرها
+
+/* ========= لوحة الدكتور ========= */
+function openDoctorPanel() {
+  const pass = prompt("أدخل كلمة مرور لوحة الدكتور:");
+  if (pass !== DOCTOR_PASSWORD) return;
+
+  document.getElementById("doctorPanel").style.display = "block";
+  startQR();
+}
+
+/* ========= QR ========= */
+let timeLeft = CHANGE_TIME;
+let qr;
+
+function generateToken() {
+  return Math.floor(Date.now() / (CHANGE_TIME * 1000));
+}
+
+function generateQR() {
+  const qrDiv = document.getElementById("qrcode");
+  qrDiv.innerHTML = "";
+
+  const token = generateToken();
+  const url = `${window.location.origin}${window.location.pathname}?token=${token}`;
+
+  qr = new QRCode(qrDiv, url);
+}
+
+function startQR() {
+  generateQR();
+  setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").innerText = timeLeft;
+
+    if (timeLeft <= 0) {
+      generateQR();
+      timeLeft = CHANGE_TIME;
+    }
+  }, 1000);
+}
+
+/* ========= التحقق للطلاب ========= */
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+if (token) {
+  const currentToken = generateToken();
+  if (Math.abs(currentToken - token) > 1) {
+    document.body.innerHTML = "<h2>⏰ انتهت صلاحية الكود</h2>";
+  }
+}
+</script>
+
+
+    
 </body>
 </html>
