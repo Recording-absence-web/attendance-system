@@ -781,6 +781,10 @@
                 <div class="stat-number" id="todayDate">-</div>
                 <div class="stat-label">التاريخ</div>
             </div>
+            <div class="stat-card" style="grid-column: 1 / -1;">
+                <div class="stat-number" id="attendanceStatus" style="font-size: 24px;">🔒 مغلق</div>
+                <div class="stat-label">حالة التحضير</div>
+            </div>
         </div>
 
         <div class="attendance-table">
@@ -802,6 +806,14 @@
         <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
         
         <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
+        
+        <button class="export-btn" onclick="openAttendance()" style="background:#28a745; margin-top:10px">
+            🟢 فتح التحضير
+        </button>
+
+        <button class="export-btn" onclick="closeAttendance()" style="background:#6c757d; margin-top:10px">
+            🔒 إغلاق التحضير
+        </button>
 
         <!-- قسم QR المتجدد -->
         <div class="qr-container">
@@ -821,6 +833,21 @@
         const ADMIN_PASSWORD = "D123321";
         
         async function recordAttendance() {
+            // التحقق من فتح التحضير
+            const isOpen = await checkAttendanceOpen();
+            if (!isOpen) {
+                document.body.innerHTML = `
+                    <div style="text-align:center;margin-top:100px;padding:20px;">
+                        <h1 style="font-size:80px;margin:0;">🔒</h1>
+                        <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                        <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                        <br>
+                        <a href="#" onclick="showAdminLogin()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                    </div>
+                `;
+                return;
+            }
+
             const studentName = document.getElementById('studentName').value.trim();
             const studentId = document.getElementById('studentId').value.trim();
             const message = document.getElementById('message');
@@ -890,6 +917,11 @@
                 };
 
                 await db.collection('attendance').add(record);
+
+                // حفظ حالة التسجيل على الجهاز
+                const deviceId = getDeviceId();
+                const registrationTime = new Date().toLocaleString('ar-SA');
+                localStorage.setItem('attendance_registered_' + deviceId, registrationTime);
 
                 showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
                 document.getElementById('studentName').value = '';
@@ -999,6 +1031,10 @@
         }
 
         async function loadAdminPanel() {
+            // تحديث حالة التحضير
+            const isOpen = await checkAttendanceOpen();
+            updateAttendanceStatus(isOpen);
+            
             // Set up real-time listener
             db.collection('attendance')
                 .orderBy('timestamp', 'desc')
@@ -1125,6 +1161,66 @@
             }
         }
 
+        /* ================== نظام فتح/إغلاق التحضير ================== */
+        async function openAttendance() {
+            await db.collection("settings").doc("attendance").set({ isOpen: true });
+            updateAttendanceStatus(true);
+            startDynamicQR();
+            
+            // مسح سجل الأجهزة المسجلة (محاضرة جديدة)
+            const clearDevices = confirm("هل تريد مسح سجل الأجهزة المسجلة؟\n(اختر نعم لمحاضرة جديدة، لا للاستمرار)");
+            if (clearDevices) {
+                // إرسال إشارة لمسح localStorage للطلاب
+                await db.collection("settings").doc("attendance").update({ 
+                    isOpen: true,
+                    clearDevices: Date.now() // timestamp لمسح الأجهزة
+                });
+                alert("🟢 تم فتح التحضير وإعادة تعيين الأجهزة - جاهز لمحاضرة جديدة");
+            } else {
+                alert("🟢 تم فتح التحضير - يمكن للطلاب الآن مسح QR Code");
+            }
+        }
+
+        async function closeAttendance() {
+            await db.collection("settings").doc("attendance").set({ isOpen: false });
+            updateAttendanceStatus(false);
+            if (qrInterval) clearInterval(qrInterval);
+            alert("🔒 تم إغلاق التحضير - لن يتمكن الطلاب من تسجيل الحضور");
+        }
+
+        async function checkAttendanceOpen() {
+            const doc = await db.collection("settings").doc("attendance").get();
+            return doc.exists && doc.data().isOpen === true;
+        }
+
+        function updateAttendanceStatus(isOpen) {
+            const statusEl = document.getElementById('attendanceStatus');
+            if (statusEl) {
+                if (isOpen) {
+                    statusEl.innerHTML = '🟢 مفتوح';
+                    statusEl.parentElement.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                } else {
+                    statusEl.innerHTML = '🔒 مغلق';
+                    statusEl.parentElement.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                }
+            }
+        }
+        
+        /* مراقبة إشارة مسح الأجهزة */
+        db.collection("settings").doc("attendance").onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                const lastClear = localStorage.getItem('last_device_clear');
+                
+                if (data.clearDevices && (!lastClear || data.clearDevices > parseInt(lastClear))) {
+                    // مسح جميع سجلات التسجيل على الجهاز
+                    const deviceId = getDeviceId();
+                    localStorage.removeItem('attendance_registered_' + deviceId);
+                    localStorage.setItem('last_device_clear', data.clearDevices.toString());
+                }
+            }
+        });
+
         // Allow Enter key to submit
         document.getElementById('studentId').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -1202,18 +1298,88 @@
         const params = new URLSearchParams(window.location.search);
         const urlToken = params.get("token");
         
-        if (urlToken) {
-            const currentToken = generateToken();
-            // سماحية دورة واحدة فقط
-            if (Math.abs(currentToken - urlToken) > 1) {
+        // حماية قوية: لازم يكون في token (QR Code)
+        if (!urlToken) {
+            // السماح فقط بصفحات الدكتور
+            const currentPath = window.location.pathname;
+            const isRootOrIndex = currentPath === '/' || currentPath.endsWith('index.html') || currentPath === '';
+            
+            // منع الوصول المباشر - لازم QR Code
+            (async () => {
+                const isOpen = await checkAttendanceOpen();
                 document.body.innerHTML = `
-                    <div style="text-align:center;margin-top:100px;">
-                        <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
-                        <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
-                        <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                    <div style="text-align:center;margin-top:100px;padding:20px;">
+                        <h1 style="font-size:80px;margin:0;">📱</h1>
+                        <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
+                        <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
+                        ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
+                        <br>
+                        <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
+                        <br><br>
+                        <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
                     </div>
                 `;
+            })();
+        } else {
+            // إذا في token، نتحقق من صلاحيته
+            (async () => {
+                const isOpen = await checkAttendanceOpen();
+                if (!isOpen) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center;margin-top:100px;padding:20px;">
+                            <h1 style="font-size:80px;margin:0;">🔒</h1>
+                            <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                            <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                            <br>
+                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // ثم التحقق من صلاحية QR Token
+                const currentToken = generateToken();
+                // سماحية دورة واحدة فقط
+                if (Math.abs(currentToken - urlToken) > 1) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center;margin-top:100px;padding:20px;">
+                            <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                            <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                            <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                            <br>
+                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // التحقق من التسجيل السابق على نفس الجهاز
+                const deviceId = getDeviceId();
+                const hasRegistered = localStorage.getItem('attendance_registered_' + deviceId);
+                
+                if (hasRegistered) {
+                    document.body.innerHTML = `
+                        <div style="text-align:center;margin-top:100px;padding:20px;">
+                            <h1 style="font-size:80px;margin:0;">✅</h1>
+                            <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
+                            <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
+                            <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
+                            <br>
+                            <a href="javascript:void(0)" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                        </div>
+                    `;
+                }
+            })();
+        }
+        
+        /* دالة توليد معرف فريد للجهاز */
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('device_id');
+            if (!deviceId) {
+                deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('device_id', deviceId);
             }
+            return deviceId;
         }
     </script>
 </body>
