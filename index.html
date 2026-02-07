@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الحضور الإلكتروني</title>
+    
+    <!-- مكتبة توليد QR -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+    
+    <!-- Firebase SDK - Compat Version -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration - UPDATED
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcqHZJijuNRcj6f1OXj_oE7_yD3NaDIwE",
+            authDomain: "atendence-21.firebaseapp.com",
+            projectId: "atendence-21",
+            storageBucket: "atendence-21.firebasestorage.app",
+            messagingSenderId: "190299059684",
+            appId: "1:190299059684:web:3e2f6f6e2e1462f557c3f1"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #06beb6;
+            box-shadow: 0 0 0 3px rgba(6, 190, 182, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(6, 190, 182, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 190, 182, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .admin-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .admin-link a {
+            color: #06beb6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .admin-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Admin Panel Styles */
+        .admin-panel {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .attendance-table {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 10px;
+            padding: 10px;
+            background: #06beb6;
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+
+        .time-badge {
+            font-size: 11px;
+            color: #666;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .export-btn {
+            margin-top: 15px;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+        }
+
+        .logout-btn {
+            margin-top: 10px;
+            padding: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: #5a6268;
+        }
+
+        /* زر فتح/إقفال التحضير */
+        .toggle-attendance-btn {
+            margin-top: 15px;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-attendance-btn.open {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .toggle-attendance-btn.open:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .toggle-attendance-btn.closed {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .toggle-attendance-btn.closed:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* قسم QR المتجدد */
+        .qr-container {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(6, 190, 182, 0.3);
+        }
+
+        .qr-title {
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .qr-code-wrapper {
+            display: inline-block;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-timer-section {
+            margin-top: 20px;
+        }
+
+        .qr-timer-text {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .qr-timer-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-hint {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* زر إعادة تعيين الكود */
+        .reset-qr-btn {
+            margin-top: 15px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .reset-qr-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.6);
+        }
+
+        .reset-qr-btn:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #06beb6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .online-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-left: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ==================== زر التبديل ==================== */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(6, 190, 182, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 190, 182, 0.6);
+        }
+
+        /* حركة طفو للإيموجي في الوضع النهاري - مثل المسائي */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        body.dark-mode .logo {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* ==================== الدارك مود ==================== */
+        body.dark-mode {
+            background: #0a0e27;
+        }
+        
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            animation: glow 15s infinite;
+            z-index: 0;
+        }
+        
+        body.dark-mode::after {
+            content: '';
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+            bottom: -250px;
+            left: -250px;
+            animation: glow 20s infinite reverse;
+            z-index: 0;
+        }
+        
+        @keyframes glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        body.dark-mode .theme-toggle {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            color: #0a0e27;
+        }
+
+        body.dark-mode .container {
+            background: rgba(20, 25, 45, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .logo {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+        }
+
+        body.dark-mode h1 {
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        body.dark-mode .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode label {
+            color: #00ffff;
+        }
+
+        body.dark-mode input {
+            background: rgba(10, 15, 35, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            color: white;
+        }
+
+        body.dark-mode input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        body.dark-mode input:focus {
+            border-color: #00ffff;
+            background: rgba(10, 15, 35, 0.8);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .btn {
+            background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
+            color: #0a0e27;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+        }
+
+        body.dark-mode .btn:hover {
+            box-shadow: 0 0 35px rgba(0, 255, 255, 0.6);
+        }
+
+        body.dark-mode .btn:disabled {
+            opacity: 0.5;
+        }
+
+        body.dark-mode .message {
+            backdrop-filter: blur(10px);
+        }
+
+        body.dark-mode .success {
+            background: rgba(0, 255, 100, 0.15);
+            color: #00ff64;
+            border: 2px solid rgba(0, 255, 100, 0.3);
+        }
+
+        body.dark-mode .error {
+            background: rgba(255, 0, 100, 0.15);
+            color: #ff0064;
+            border: 2px solid rgba(255, 0, 100, 0.3);
+        }
+
+        body.dark-mode .admin-link a {
+            color: #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .admin-link a:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .stat-card {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        body.dark-mode .stat-number {
+            color: #00ffff;
+        }
+
+        body.dark-mode .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        body.dark-mode .attendance-table {
+            background: rgba(10, 15, 35, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        body.dark-mode .table-header {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+        }
+
+        body.dark-mode .table-row {
+            background: rgba(20, 25, 45, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.1);
+            color: white;
+        }
+
+        body.dark-mode .table-row:hover {
+            background: rgba(0, 255, 255, 0.05);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .time-badge {
+            background: rgba(0, 255, 255, 0.15);
+            color: #00ffff;
+        }
+
+        body.dark-mode .export-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
+            color: #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .export-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(138, 43, 226, 0.3) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .logout-btn {
+            background: rgba(138, 43, 226, 0.3);
+            color: #8a2be2;
+            border: 1px solid rgba(138, 43, 226, 0.5);
+        }
+
+        body.dark-mode .logout-btn:hover {
+            background: rgba(138, 43, 226, 0.4);
+        }
+
+        /* قسم QR في الدارك مود */
+        body.dark-mode .qr-container {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        body.dark-mode .qr-title {
+            color: #00ffff;
+        }
+
+        body.dark-mode .qr-code-wrapper {
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .qr-timer-text {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .qr-timer-number {
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        body.dark-mode .qr-hint {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode .reset-qr-btn {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        body.dark-mode .reset-qr-btn:hover {
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                max-width: 100%;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                left: 10px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            #themeText {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-number {
+                font-size: 28px;
+            }
+
+            .table-header,
+            .table-row {
+                grid-template-columns: 2fr 2fr 1fr;
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .qr-container {
+                padding: 20px;
+                margin-top: 15px;
+            }
+
+            .qr-title {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+
+            .qr-code-wrapper {
+                padding: 10px;
+            }
+
+            #dynamicQRCode img {
+                width: 220px !important;
+                height: 220px !important;
+            }
+
+            .qr-timer-text {
+                font-size: 16px;
+            }
+
+            .qr-timer-number {
+                font-size: 28px;
+            }
+
+            .qr-hint {
+                font-size: 12px;
+            }
+
+            .export-btn {
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .attendance-table {
+                max-height: 300px;
+            }
+        }
+
+        /* تعديلات الدارك مود للجوال */
+        @media (max-width: 600px) {
+            body.dark-mode::before {
+                width: 300px;
+                height: 300px;
+                top: -150px;
+                right: -150px;
+            }
+            
+            body.dark-mode::after {
+                width: 350px;
+                height: 350px;
+                bottom: -150px;
+                left: -150px;
+            }
+
+            body.dark-mode .container {
+                padding: 20px;
+            }
+
+            body.dark-mode .logo {
+                width: 70px;
+                height: 70px;
+                font-size: 35px;
+            }
+
+            body.dark-mode h1 {
+                font-size: 22px;
+            }
+
+            body.dark-mode .theme-toggle {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+    <!-- زر التبديل بين الأوضاع -->
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">الوضع الليلي</span>
+    </button>
+
+    <!-- Student Attendance Form -->
+    <div class="container" id="studentView">
+        <div class="header">
+            <div class="logo">📋</div>
+            <h1>نظام الحضور الإلكتروني</h1>
+            <p class="subtitle">سجل حضورك بسرعة وسهولة <span class="online-indicator"></span></p>
+        </div>
+
+        <div class="input-group">
+            <label for="studentName">الاسم الكامل (ثلاثي)</label>
+            <input type="text" id="studentName" placeholder="مثال: محمد أحمد العلي">
+        </div>
+
+        <div class="input-group">
+            <label for="studentId">الرقم الجامعي (8 أرقام)</label>
+            <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
+        </div>
+
+        <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
+
+        <div class="message" id="message"></div>
+
+        <div class="admin-link">
+            <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div class="container" id="adminLogin" style="display: none;">
+        <div class="header">
+            <div class="logo">🔐</div>
+            <h1>دخول لوحة التحكم</h1>
+            <p class="subtitle">للدكتور فقط</p>
+        </div>
+
+        <div class="input-group">
+            <label for="adminPassword">كلمة المرور</label>
+            <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
+        </div>
+
+        <button class="btn" onclick="adminLogin()">دخول</button>
+
+        <div class="message" id="loginMessage"></div>
+
+        <div class="admin-link">
+            <a href="#" onclick="showStudentView(); return false;">← العودة لصفحة الطلاب</a>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="container" id="adminPanel" style="display: none; max-width: 800px;">
+        <div class="header">
+            <div class="logo">📊</div>
+            <h1>لوحة تحكم الدكتور</h1>
+            <p class="subtitle">إدارة الحضور والإحصائيات <span class="online-indicator"></span></p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">إجمالي الحضور</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayDate">-</div>
+                <div class="stat-label">التاريخ</div>
+            </div>
+        </div>
+
+        <div class="attendance-table">
+            <div class="table-header">
+                <div>الاسم</div>
+                <div>الرقم الجامعي</div>
+                <div>الوقت</div>
+            </div>
+            <div id="attendanceTableBody">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>جاري تحميل البيانات...</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
+        
+        <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
+        
+        <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
+
+        <!-- زر فتح/إقفال التحضير -->
+        <button id="toggleAttendanceBtn" class="toggle-attendance-btn open" onclick="toggleAttendanceStatus()">
+            🔓 التحضير مفتوح
+        </button>
+
+        <!-- قسم QR المتجدد -->
+        <div class="qr-container">
+            <h3 class="qr-title">📱 QR Code المتجدد</h3>
+            <div id="dynamicQRCode" class="qr-code-wrapper"></div>
+            <div class="qr-timer-section">
+                <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">20</span> ثانية</p>
+                <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 20 ثانية</p>
+            </div>
+            
+            <!-- زر إعادة تعيين الكود -->
+            <button class="reset-qr-btn" onclick="resetQRCode()">
+                🔄 إعادة تعيين الكود
+            </button>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+    </div>
+
+    <script>
+        // Admin password
+        const ADMIN_PASSWORD = "D123321";
+        
+        // حالة التحضير (مفتوح/مقفل)
+        let isAttendanceOpen = true;
+        
+        // التحقق من صلاحية الدخول (من QR Code أو مباشرة)
+        let hasValidToken = false;
+        
+        async function recordAttendance() {
+            const studentName = document.getElementById('studentName').value.trim();
+            const studentId = document.getElementById('studentId').value.trim();
+            const message = document.getElementById('message');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // التحقق من الدخول من QR Code
+            if (!hasValidToken) {
+                showMessage('⚠️ يجب عليك الدخول من خلال مسح QR Code من الدكتور!', 'error', 'message');
+                return;
+            }
+            
+            // التحقق من حالة التحضير
+            if (!isAttendanceOpen) {
+                showMessage('⚠️ التحضير مقفل حالياً! الرجاء الانتظار حتى يفتحه الدكتور', 'error', 'message');
+                return;
+            }
+
+            // التحقق من أن الجهاز لم يسجل مسبقاً
+            const deviceRegistered = localStorage.getItem('attendance_registered');
+            if (deviceRegistered) {
+                showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً! لا يمكن التسجيل مرة أخرى', 'error', 'message');
+                return;
+            }
+            
+            if (!studentName) {
+                showMessage('الرجاء إدخال الاسم الكامل', 'error', 'message');
+                return;
+            }
+
+            // Check if name has at least 3 parts (triple name)
+            const nameParts = studentName.split(' ').filter(part => part.length > 0);
+            if (nameParts.length < 3) {
+                showMessage('⚠️ الرجاء إدخال الاسم ثلاثياً على الأقل (الاسم + اسم الأب + العائلة)', 'error', 'message');
+                return;
+            }
+
+            if (!studentId) {
+                showMessage('الرجاء إدخال الرقم الجامعي', 'error', 'message');
+                return;
+            }
+
+            // Validate university ID - must be exactly 8 digits
+            if (!/^\d{8}$/.test(studentId)) {
+                showMessage('⚠️ الرقم الجامعي يجب أن يتكون من 8 أرقام فقط', 'error', 'message');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'جاري التسجيل...';
+
+                // Check if already registered
+                const querySnapshot = await db.collection('attendance').get();
+                
+                let alreadyRegistered = false;
+                querySnapshot.forEach((doc) => {
+                    if (doc.data().id === studentId) {
+                        alreadyRegistered = true;
+                    }
+                });
+
+                if (alreadyRegistered) {
+                    showMessage('⚠️ هذا الرقم مسجل مسبقاً!', 'error', 'message');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '✓ تسجيل الحضور';
+                    return;
+                }
+
+                // Record attendance
+                const attendanceTime = new Date();
+                const record = {
+                    name: studentName,
+                    id: studentId,
+                    date: attendanceTime.toLocaleDateString('ar-SA', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }),
+                    time: attendanceTime.toLocaleTimeString('ar-SA', { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit' 
+                    }),
+                    timestamp: attendanceTime.getTime()
+                };
+
+                await db.collection('attendance').add(record);
+
+                // حفظ أن الجهاز سجل الحضور
+                localStorage.setItem('attendance_registered', 'true');
+                localStorage.setItem('attendance_student_name', studentName);
+
+                showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentId').value = '';
+                
+                // تعطيل النموذج بعد التسجيل
+                document.getElementById('studentName').disabled = true;
+                document.getElementById('studentId').disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.textContent = '✅ تم التسجيل';
+                
+            } catch (error) {
+                console.error('Error recording attendance:', error);
+                showMessage('❌ حدث خطأ في التسجيل. الرجاء المحاولة مرة أخرى.', 'error', 'message');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✓ تسجيل الحضور';
+            }
+        }
+
+        function showMessage(text, type, elementId) {
+            const message = document.getElementById(elementId);
+            message.textContent = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+            message.style.cursor = 'pointer';
+            
+            // Clear any existing timeout
+            if (message.timeoutId) {
+                clearTimeout(message.timeoutId);
+            }
+            
+            // Hide after 30 seconds
+            message.timeoutId = setTimeout(() => {
+                message.style.display = 'none';
+            }, 30000);
+            
+            // Allow click to dismiss
+            message.onclick = function() {
+                message.style.display = 'none';
+                if (message.timeoutId) {
+                    clearTimeout(message.timeoutId);
+                }
+            };
+        }
+
+        function showAdminLogin() {
+            document.getElementById('studentView').style.display = 'none';
+            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        function showStudentView() {
+            document.getElementById('studentView').style.display = 'block';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        /* ==================== نظام التبديل بين الأوضاع ==================== */
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'الوضع النهاري';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'الوضع الليلي';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // تحميل الثيم المحفوظ عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'الوضع النهاري';
+            }
+
+            // التحقق من حالة التسجيل المسبق
+            const deviceRegistered = localStorage.getItem('attendance_registered');
+            const studentName = localStorage.getItem('attendance_student_name');
+            
+            if (deviceRegistered && hasValidToken) {
+                const message = document.getElementById('message');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (studentName || 'طالب/ة') + '!', 'success', 'message');
+                
+                document.getElementById('studentName').disabled = true;
+                document.getElementById('studentId').disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.textContent = '✅ تم التسجيل';
+            }
+        });
+
+        async function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                await loadAdminPanel();
+                
+                // تشغيل نظام QR المتجدد
+                startDynamicQR();
+            } else {
+                showMessage('❌ كلمة المرور غير صحيحة', 'error', 'loginMessage');
+            }
+        }
+
+        function logout() {
+            document.getElementById('adminPassword').value = '';
+            // إيقاف QR المتجدد عند الخروج
+            if (qrInterval) {
+                clearInterval(qrInterval);
+            }
+            showStudentView();
+        }
+
+        async function loadAdminPanel() {
+            // Set up real-time listener
+            db.collection('attendance')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot((querySnapshot) => {
+                    const attendanceData = [];
+                    querySnapshot.forEach((doc) => {
+                        attendanceData.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    updateAdminPanel(attendanceData);
+                });
+        }
+
+        function updateAdminPanel(attendanceData) {
+            // Update stats
+            document.getElementById('totalStudents').textContent = attendanceData.length;
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('ar-SA', { 
+                day: 'numeric', 
+                month: 'short' 
+            });
+
+            // Update table
+            const tableBody = document.getElementById('attendanceTableBody');
+            
+            if (attendanceData.length === 0) {
+                tableBody.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">لا يوجد حضور مسجل بعد</p>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            
+            attendanceData.forEach((record) => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div><strong>${record.name}</strong></div>
+                    <div>${record.id}</div>
+                    <div class="time-badge">${record.time}</div>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function exportToCSV() {
+            const querySnapshot = await db.collection('attendance').get();
+            
+            if (querySnapshot.empty) {
+                alert('لا يوجد بيانات للتصدير');
+                return;
+            }
+
+            let csv = '\uFEFF';
+            csv += 'الاسم,الرقم الجامعي,التاريخ,الوقت\n';
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                csv += `${data.name},${data.id},${data.date},${data.time}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `attendance_full_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function exportIDsOnly() {
+            const querySnapshot = await db.collection('attendance').get();
+            
+            if (querySnapshot.empty) {
+                alert('لا يوجد بيانات للتصدير');
+                return;
+            }
+
+            let csv = '\uFEFF';
+            csv += 'الرقم الجامعي\n';
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                csv += `${data.id}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `student_ids_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function resetAttendance() {
+            const querySnapshot = await db.collection('attendance').get();
+            
+            if (querySnapshot.empty) {
+                alert('لا يوجد حضور لمسحه');
+                return;
+            }
+
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 ملاحظة: الطلاب الذين سجلوا من أجهزتهم سيحتاجون لمسح بيانات المتصفح لإعادة التسجيل.');
+            
+            if (confirmReset) {
+                const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + querySnapshot.size + ' طالب/طالبة. هل تريد المتابعة؟');
+                
+                if (doubleConfirm) {
+                    const deletePromises = [];
+                    querySnapshot.forEach((document) => {
+                        deletePromises.push(db.collection('attendance').doc(document.id).delete());
+                    });
+                    
+                    await Promise.all(deletePromises);
+                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n📌 تذكير: الطلاب يحتاجون لمسح بيانات المتصفح للتسجيل مجدداً من نفس الجهاز.');
+                }
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('studentId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                recordAttendance();
+            }
+        });
+
+        document.getElementById('studentName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('studentId').focus();
+            }
+        });
+
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                adminLogin();
+            }
+        });
+
+        /* ================== نظام QR المتجدد ================== */
+        const QR_CHANGE_TIME = 20;          // مدة صلاحية QR بالثواني
+        const QR_DOCTOR_PASSWORD = "D123321";  // نفس كلمة سر لوحة التحكم
+        
+        let qrInterval;
+        let qrTimeLeft = QR_CHANGE_TIME;
+        
+        /* توليد Token بناءً على الوقت الحالي */
+        function generateToken() {
+            return Math.floor(Date.now() / (QR_CHANGE_TIME * 1000));
+        }
+        
+        /* التحقق من صلاحية التوكن بدون سماحية */
+        function isTokenValid(urlToken) {
+            const currentToken = generateToken();
+            const tokenNumber = parseInt(urlToken);
+            
+            // قبول التوكن الحالي فقط (بدون سماحية)
+            return (tokenNumber === currentToken);
+        }
+        
+        /* توليد QR Code جديد */
+        function generateDynamicQR() {
+            const qrDiv = document.getElementById("dynamicQRCode");
+            if (!qrDiv) return;
+            
+            qrDiv.innerHTML = "";
+            const token = generateToken();
+            const url = window.location.origin + window.location.pathname + "?token=" + token;
+            
+            // تحديد حجم QR بناءً على حجم الشاشة - أكبر للوضوح
+            const isMobile = window.innerWidth <= 600;
+            const qrSize = isMobile ? 220 : 280;
+            
+            new QRCode(qrDiv, {
+                text: url,
+                width: qrSize,
+                height: qrSize,
+                colorDark: "#06beb6",
+                colorLight: "#ffffff"
+            });
+        }
+        
+        /* بدء نظام QR المتجدد */
+        function startDynamicQR() {
+            clearInterval(qrInterval);
+            qrTimeLeft = QR_CHANGE_TIME;
+            generateDynamicQR();
+            
+            qrInterval = setInterval(() => {
+                qrTimeLeft--;
+                const timerEl = document.getElementById("qrTimer");
+                if (timerEl) {
+                    timerEl.innerText = qrTimeLeft;
+                }
+                
+                if (qrTimeLeft <= 0) {
+                    generateDynamicQR();
+                    qrTimeLeft = QR_CHANGE_TIME;
+                }
+            }, 1000);
+        }
+        
+        /* إعادة تعيين QR Code والوقت */
+        function resetQRCode() {
+            // إعادة توليد الكود من جديد
+            generateDynamicQR();
+            // إعادة تعيين الوقت إلى 20 ثانية
+            qrTimeLeft = QR_CHANGE_TIME;
+            const timerEl = document.getElementById("qrTimer");
+            if (timerEl) {
+                timerEl.innerText = qrTimeLeft;
+            }
+        }
+        
+        /* التحقق من صلاحية QR عند دخول الطالب */
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get("token");
+        
+        if (urlToken) {
+            // استخدام الدالة الجديدة للتحقق مع السماحية
+            if (!isTokenValid(urlToken)) {
+                // التوكن منتهي (أكثر من 15 ثانية)
+                document.body.innerHTML = `
+                    <div style="text-align:center;margin-top:100px;">
+                        <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                        <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                        <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                    </div>
+                `;
+            } else {
+                // التوكن صالح (ضمن 15 ثانية)
+                hasValidToken = true;
+            }
+        } else {
+            // لا يوجد توكن - الدخول مباشرة بدون QR
+            // نخفي نموذج التسجيل ونعرض رسالة
+            const studentView = document.getElementById('studentView');
+            if (studentView) {
+                studentView.innerHTML = `
+                    <div class="header">
+                        <div class="logo">🔒</div>
+                        <h1>يجب الدخول من QR Code</h1>
+                        <p class="subtitle" style="color: #dc3545; font-weight: 600; margin-top: 20px;">
+                            ⚠️ للتسجيل، يجب عليك مسح QR Code من شاشة الدكتور
+                        </p>
+                        <div style="margin-top: 30px; padding: 20px; background: #f8d7da; border-radius: 10px; border: 2px solid #f5c6cb;">
+                            <p style="color: #721c24; font-weight: 600;">📱 لا يمكن الدخول المباشر لهذه الصفحة</p>
+                        </div>
+                    </div>
+                    <div class="admin-link" style="margin-top: 30px;">
+                        <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
+                    </div>
+                `;
+            }
+        }
+
+        /* ================== وظيفة فتح/إقفال التحضير ================== */
+        function toggleAttendanceStatus() {
+            const btn = document.getElementById('toggleAttendanceBtn');
+            
+            if (isAttendanceOpen) {
+                // إقفال التحضير
+                isAttendanceOpen = false;
+                btn.classList.remove('open');
+                btn.classList.add('closed');
+                btn.innerHTML = '🔒 التحضير مقفل';
+                
+                // إيقاف QR Code
+                if (qrInterval) {
+                    clearInterval(qrInterval);
+                }
+                const qrDiv = document.getElementById("dynamicQRCode");
+                if (qrDiv) {
+                    qrDiv.innerHTML = '<p style="background: #dc3545; color: white; padding: 30px; font-size: 18px; border-radius: 10px; font-weight: 600;">⛔ التحضير مقفل حالياً</p>';
+                }
+                document.getElementById("qrTimer").innerText = '-';
+                
+            } else {
+                // فتح التحضير
+                isAttendanceOpen = true;
+                btn.classList.remove('closed');
+                btn.classList.add('open');
+                btn.innerHTML = '🔓 التحضير مفتوح';
+                
+                // تشغيل QR Code من جديد
+                startDynamicQR();
+            }
+        }
+    </script>
+</body>
+</html>
