@@ -967,11 +967,28 @@
                 return;
             }
 
-            // التحقق من أن الجهاز لم يسجل مسبقاً
-            const deviceRegistered = localStorage.getItem('attendance_registered');
-            if (deviceRegistered) {
-                showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً! لا يمكن التسجيل مرة أخرى', 'error', 'message');
-                return;
+            // التحقق من أن الجهاز لم يسجل مسبقاً في هذه الجلسة
+            try {
+                // جلب Session ID الحالي من Firebase
+                const sessionDoc = await db.collection('settings').doc('session').get();
+                const currentSessionId = sessionDoc.exists ? sessionDoc.data().id : 0;
+                
+                // التحقق من Session ID المحفوظ في الجهاز
+                const savedSessionId = localStorage.getItem('attendance_session_id');
+                const deviceRegistered = localStorage.getItem('attendance_registered');
+                
+                // إذا كان Session ID مختلف، نمسح الحالة القديمة (جلسة جديدة)
+                if (savedSessionId !== String(currentSessionId)) {
+                    localStorage.removeItem('attendance_registered');
+                    localStorage.removeItem('attendance_student_name');
+                    localStorage.setItem('attendance_session_id', currentSessionId);
+                } else if (deviceRegistered) {
+                    // نفس الجلسة والجهاز مسجل مسبقاً
+                    showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً! لا يمكن التسجيل مرة أخرى', 'error', 'message');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
             }
             
             if (!studentName) {
@@ -1131,20 +1148,37 @@
                 themeText.textContent = 'الوضع النهاري';
             }
 
-            // التحقق من حالة التسجيل المسبق
+            // التحقق من حالة التسجيل المسبق في هذه الجلسة
             const deviceRegistered = localStorage.getItem('attendance_registered');
             const studentName = localStorage.getItem('attendance_student_name');
             
             if (deviceRegistered && hasValidToken) {
-                const message = document.getElementById('message');
-                const submitBtn = document.getElementById('submitBtn');
-                
-                showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (studentName || 'طالب/ة') + '!', 'success', 'message');
-                
-                document.getElementById('studentName').disabled = true;
-                document.getElementById('studentId').disabled = true;
-                submitBtn.disabled = true;
-                submitBtn.textContent = '✅ تم التسجيل';
+                // التحقق من Session ID
+                try {
+                    const sessionDoc = await db.collection('settings').doc('session').get();
+                    const currentSessionId = sessionDoc.exists ? sessionDoc.data().id : 0;
+                    const savedSessionId = localStorage.getItem('attendance_session_id');
+                    
+                    // إذا Session ID مختلف، نمسح الحالة القديمة
+                    if (savedSessionId !== String(currentSessionId)) {
+                        localStorage.removeItem('attendance_registered');
+                        localStorage.removeItem('attendance_student_name');
+                        localStorage.setItem('attendance_session_id', currentSessionId);
+                    } else {
+                        // نفس الجلسة - عرض رسالة التسجيل المسبق
+                        const message = document.getElementById('message');
+                        const submitBtn = document.getElementById('submitBtn');
+                        
+                        showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (studentName || 'طالب/ة') + '!', 'success', 'message');
+                        
+                        document.getElementById('studentName').disabled = true;
+                        document.getElementById('studentId').disabled = true;
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '✅ تم التسجيل';
+                    }
+                } catch (error) {
+                    console.error('Error checking session on load:', error);
+                }
             }
         });
 
@@ -1282,7 +1316,7 @@
                 return;
             }
 
-            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 ملاحظة: الطلاب الذين سجلوا من أجهزتهم سيحتاجون لمسح بيانات المتصفح لإعادة التسجيل.');
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n✅ سيتم إعادة تعيين جميع الأجهزة تلقائياً.');
             
             if (confirmReset) {
                 const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + querySnapshot.size + ' طالب/طالبة. هل تريد المتابعة؟');
@@ -1294,7 +1328,13 @@
                     });
                     
                     await Promise.all(deletePromises);
-                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n📌 تذكير: الطلاب يحتاجون لمسح بيانات المتصفح للتسجيل مجدداً من نفس الجهاز.');
+                    
+                    // زيادة Session ID لإبطال جميع الأجهزة المسجلة
+                    const sessionDoc = await db.collection('settings').doc('session').get();
+                    const currentSessionId = sessionDoc.exists ? sessionDoc.data().id : 0;
+                    await db.collection('settings').doc('session').set({ id: currentSessionId + 1 });
+                    
+                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n✅ جميع الأجهزة تم إعادة تعيينها - الطلاب يقدرون يسجلون من جديد!');
                 }
             }
         }
@@ -1364,7 +1404,14 @@
         /* بدء نظام QR المتجدد */
         function startDynamicQR() {
             clearInterval(qrInterval);
-            qrTimeLeft = QR_CHANGE_TIME;
+            
+            // حساب الوقت المتبقي بناءً على التوكن الحالي
+            const currentTime = Date.now();
+            const currentToken = Math.floor(currentTime / (QR_CHANGE_TIME * 1000));
+            const nextTokenTime = (currentToken + 1) * QR_CHANGE_TIME * 1000;
+            const timeLeft = Math.ceil((nextTokenTime - currentTime) / 1000);
+            
+            qrTimeLeft = timeLeft;
             generateDynamicQR();
             
             qrInterval = setInterval(() => {
@@ -1375,22 +1422,22 @@
                 }
                 
                 if (qrTimeLeft <= 0) {
+                    // إعادة حساب الوقت المتبقي للدورة الجديدة
+                    const newCurrentTime = Date.now();
+                    const newCurrentToken = Math.floor(newCurrentTime / (QR_CHANGE_TIME * 1000));
+                    const newNextTokenTime = (newCurrentToken + 1) * QR_CHANGE_TIME * 1000;
+                    qrTimeLeft = Math.ceil((newNextTokenTime - newCurrentTime) / 1000);
+                    
                     generateDynamicQR();
-                    qrTimeLeft = QR_CHANGE_TIME;
                 }
             }, 1000);
         }
         
         /* إعادة تعيين QR Code والوقت */
         function resetQRCode() {
-            // إعادة توليد الكود من جديد
-            generateDynamicQR();
-            // إعادة تعيين الوقت إلى 20 ثانية
-            qrTimeLeft = QR_CHANGE_TIME;
-            const timerEl = document.getElementById("qrTimer");
-            if (timerEl) {
-                timerEl.innerText = qrTimeLeft;
-            }
+            // إيقاف العداد الحالي وإعادة بدء النظام بالكامل
+            clearInterval(qrInterval);
+            startDynamicQR();
         }
         
         /* التحقق من صلاحية QR عند دخول الطالب */
