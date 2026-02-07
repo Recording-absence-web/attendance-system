@@ -1301,13 +1301,30 @@
             return Math.floor(Date.now() / (QR_CHANGE_TIME * 1000));
         }
         
-        /* التحقق من صلاحية التوكن بدون سماحية */
+        /* التحقق من صلاحية التوكن مع سماحية 5 ثواني */
         function isTokenValid(urlToken) {
             const currentToken = generateToken();
             const tokenNumber = parseInt(urlToken);
             
-            // قبول التوكن الحالي فقط (بدون سماحية)
-            return (tokenNumber === currentToken);
+            // قبول التوكن الحالي أو التوكن السابق (سماحية 5 ثواني)
+            const previousToken = currentToken - 1;
+            
+            // حساب الوقت المتبقي من الفترة الحالية
+            const currentTime = Date.now();
+            const timeInCurrentPeriod = currentTime % (QR_CHANGE_TIME * 1000);
+            const GRACE_PERIOD_MS = 5000; // 5 ثواني بالميلي ثانية
+            
+            // إذا كان التوكن هو الحالي، قبوله
+            if (tokenNumber === currentToken) {
+                return true;
+            }
+            
+            // إذا كان التوكن السابق ونحن في أول 5 ثواني من الفترة الجديدة، قبوله
+            if (tokenNumber === previousToken && timeInCurrentPeriod <= GRACE_PERIOD_MS) {
+                return true;
+            }
+            
+            return false;
         }
         
         /* توليد QR Code جديد */
