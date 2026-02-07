@@ -1370,22 +1370,44 @@
             });
         }
         
-        /* بدء نظام QR المتجدد */
+        /* بدء نظام QR المتجدد - متزامن مع التوكن */
         function startDynamicQR() {
             clearInterval(qrInterval);
-            qrTimeLeft = QR_CHANGE_TIME;
-            generateDynamicQR();
             
+            // حساب الوقت المتبقي الفعلي حتى التوكن القادم
+            function getRemainingTime() {
+                const currentTime = Date.now();
+                const timeInCurrentPeriod = currentTime % (QR_CHANGE_TIME * 1000);
+                const remainingMs = (QR_CHANGE_TIME * 1000) - timeInCurrentPeriod;
+                return Math.ceil(remainingMs / 1000); // تحويل لثواني
+            }
+            
+            // توليد QR وضبط العداد
+            function updateQR() {
+                generateDynamicQR();
+                qrTimeLeft = getRemainingTime();
+                
+                const timerEl = document.getElementById("qrTimer");
+                if (timerEl) {
+                    timerEl.innerText = qrTimeLeft;
+                }
+            }
+            
+            // بدء أول QR
+            updateQR();
+            
+            // تحديث العداد كل ثانية
             qrInterval = setInterval(() => {
-                qrTimeLeft--;
+                qrTimeLeft = getRemainingTime();
+                
                 const timerEl = document.getElementById("qrTimer");
                 if (timerEl) {
                     timerEl.innerText = qrTimeLeft;
                 }
                 
+                // إذا وصل الوقت للصفر، جدد QR
                 if (qrTimeLeft <= 0) {
-                    generateDynamicQR();
-                    qrTimeLeft = QR_CHANGE_TIME;
+                    updateQR();
                 }
             }, 1000);
         }
