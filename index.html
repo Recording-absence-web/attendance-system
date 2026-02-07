@@ -384,29 +384,6 @@
         }
 
         /* زر إعادة تعيين الكود */
-        .reset-qr-btn {
-            margin-top: 15px;
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .reset-qr-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.6);
-        }
-
-        .reset-qr-btn:active {
-            transform: translateY(0);
-        }
-
         .loading {
             text-align: center;
             padding: 20px;
@@ -691,15 +668,6 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        body.dark-mode .reset-qr-btn {
-            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
-        }
-
-        body.dark-mode .reset-qr-btn:hover {
-            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
-        }
-
         @media (max-width: 600px) {
             .container {
                 padding: 25px;
@@ -925,11 +893,6 @@
                 <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">20</span> ثانية</p>
                 <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 20 ثانية</p>
             </div>
-            
-            <!-- زر إعادة تعيين الكود -->
-            <button class="reset-qr-btn" onclick="resetQRCode()">
-                🔄 إعادة تعيين الكود
-            </button>
         </div>
 
         <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
@@ -1271,26 +1234,38 @@
         }
 
         async function resetAttendance() {
-            const querySnapshot = await db.collection('attendance').get();
+            const attendanceSnapshot = await db.collection('attendance').get();
+            const devicesSnapshot = await db.collection('registeredDevices').get();
             
-            if (querySnapshot.empty) {
-                alert('لا يوجد حضور لمسحه');
+            if (attendanceSnapshot.empty && devicesSnapshot.empty) {
+                alert('لا يوجد بيانات لمسحها');
                 return;
             }
 
-            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 ملاحظة: الطلاب الذين سجلوا من أجهزتهم سيحتاجون لمسح بيانات المتصفح لإعادة التسجيل.');
+            const totalRecords = attendanceSnapshot.size + devicesSnapshot.size;
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور والأجهزة المسجلة؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📊 سيتم مسح:\n• ' + attendanceSnapshot.size + ' سجل حضور\n• ' + devicesSnapshot.size + ' جهاز مسجل');
             
             if (confirmReset) {
-                const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + querySnapshot.size + ' طالب/طالبة. هل تريد المتابعة؟');
+                const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + totalRecords + ' سجل. هل تريد المتابعة؟');
                 
                 if (doubleConfirm) {
                     const deletePromises = [];
-                    querySnapshot.forEach((document) => {
+                    
+                    // مسح سجلات الحضور
+                    attendanceSnapshot.forEach((document) => {
                         deletePromises.push(db.collection('attendance').doc(document.id).delete());
                     });
                     
+                    // مسح الأجهزة المسجلة
+                    devicesSnapshot.forEach((document) => {
+                        deletePromises.push(db.collection('registeredDevices').doc(document.id).delete());
+                    });
+                    
                     await Promise.all(deletePromises);
-                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n📌 تذكير: الطلاب يحتاجون لمسح بيانات المتصفح للتسجيل مجدداً من نفس الجهاز.');
+                    alert('✅ تم مسح الحضور والأجهزة المسجلة بنجاح. جاهز لمحاضرة جديدة!\n\n📌 الطلاب يمكنهم الآن التسجيل من جديد من نفس الأجهزة.');
+                    
+                    // تحديث الإحصائيات
+                    loadAttendanceData();
                 }
             }
         }
@@ -1378,16 +1353,6 @@
         }
         
         /* إعادة تعيين QR Code والوقت */
-        function resetQRCode() {
-            // إعادة توليد الكود من جديد
-            generateDynamicQR();
-            // إعادة تعيين الوقت إلى 20 ثانية
-            qrTimeLeft = QR_CHANGE_TIME;
-            const timerEl = document.getElementById("qrTimer");
-            if (timerEl) {
-                timerEl.innerText = qrTimeLeft;
-            }
-        }
         
         /* التحقق من صلاحية QR عند دخول الطالب */
         const params = new URLSearchParams(window.location.search);
