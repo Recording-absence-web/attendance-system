@@ -908,6 +908,17 @@
         // التحقق من صلاحية الدخول (من QR Code أو مباشرة)
         let hasValidToken = false;
         
+        /* توليد معرف فريد للجهاز */
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('device_unique_id');
+            if (!deviceId) {
+                // توليد معرف جديد بناءً على معلومات المتصفح والوقت
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('device_unique_id', deviceId);
+            }
+            return deviceId;
+        }
+        
         async function recordAttendance() {
             const studentName = document.getElementById('studentName').value.trim();
             const studentId = document.getElementById('studentId').value.trim();
@@ -926,10 +937,13 @@
                 return;
             }
 
-            // التحقق من أن الجهاز لم يسجل مسبقاً
-            const deviceRegistered = localStorage.getItem('attendance_registered');
-            if (deviceRegistered) {
-                showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً! لا يمكن التسجيل مرة أخرى', 'error', 'message');
+            // التحقق من أن الجهاز لم يسجل مسبقاً في Firebase
+            const deviceId = getDeviceId();
+            const deviceSnapshot = await db.collection('registeredDevices').doc(deviceId).get();
+            
+            if (deviceSnapshot.exists) {
+                const deviceData = deviceSnapshot.data();
+                showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً باسم: ' + deviceData.studentName, 'error', 'message');
                 return;
             }
             
@@ -998,9 +1012,13 @@
 
                 await db.collection('attendance').add(record);
 
-                // حفظ أن الجهاز سجل الحضور
-                localStorage.setItem('attendance_registered', 'true');
-                localStorage.setItem('attendance_student_name', studentName);
+                // تسجيل الجهاز في Firebase
+                await db.collection('registeredDevices').doc(deviceId).set({
+                    studentName: studentName,
+                    studentId: studentId,
+                    registeredAt: attendanceTime.getTime(),
+                    deviceId: deviceId
+                });
 
                 showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
                 document.getElementById('studentName').value = '';
@@ -1079,7 +1097,7 @@
         }
 
         // تحميل الثيم المحفوظ عند فتح الصفحة
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('theme');
             const themeIcon = document.getElementById('themeIcon');
             const themeText = document.getElementById('themeText');
@@ -1090,20 +1108,23 @@
                 themeText.textContent = 'الوضع النهاري';
             }
 
-            // التحقق من حالة التسجيل المسبق
-            const deviceRegistered = localStorage.getItem('attendance_registered');
-            const studentName = localStorage.getItem('attendance_student_name');
-            
-            if (deviceRegistered && hasValidToken) {
-                const message = document.getElementById('message');
-                const submitBtn = document.getElementById('submitBtn');
+            // التحقق من حالة التسجيل المسبق من Firebase
+            if (hasValidToken) {
+                const deviceId = getDeviceId();
+                const deviceSnapshot = await db.collection('registeredDevices').doc(deviceId).get();
                 
-                showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (studentName || 'طالب/ة') + '!', 'success', 'message');
-                
-                document.getElementById('studentName').disabled = true;
-                document.getElementById('studentId').disabled = true;
-                submitBtn.disabled = true;
-                submitBtn.textContent = '✅ تم التسجيل';
+                if (deviceSnapshot.exists) {
+                    const deviceData = deviceSnapshot.data();
+                    const message = document.getElementById('message');
+                    const submitBtn = document.getElementById('submitBtn');
+                    
+                    showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (deviceData.studentName || 'طالب/ة') + '!', 'success', 'message');
+                    
+                    document.getElementById('studentName').disabled = true;
+                    document.getElementById('studentId').disabled = true;
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = '✅ تم التسجيل';
+                }
             }
         });
 
@@ -1243,7 +1264,7 @@
             }
 
             const totalRecords = attendanceSnapshot.size + devicesSnapshot.size;
-            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور والأجهزة المسجلة؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📊 سيتم مسح:\n• ' + attendanceSnapshot.size + ' سجل حضور\n• ' + devicesSnapshot.size + ' جهاز مسجل');
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور والأجهزة المسجلة؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📊 سيتم مسح:\n• ' + attendanceSnapshot.size + ' سجل حضور\n• ' + devicesSnapshot.size + ' جهاز مسجل\n\n✅ بعد المسح: الطلاب يقدرون يسجلون من جديد من نفس أجهزتهم');
             
             if (confirmReset) {
                 const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + totalRecords + ' سجل. هل تريد المتابعة؟');
