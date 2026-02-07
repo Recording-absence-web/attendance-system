@@ -1233,26 +1233,38 @@
         }
 
         async function resetAttendance() {
-            const querySnapshot = await db.collection('attendance').get();
+            const attendanceSnapshot = await db.collection('attendance').get();
+            const devicesSnapshot = await db.collection('registeredDevices').get();
             
-            if (querySnapshot.empty) {
-                alert('لا يوجد حضور لمسحه');
+            if (attendanceSnapshot.empty && devicesSnapshot.empty) {
+                alert('لا يوجد بيانات لمسحها');
                 return;
             }
 
-            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 ملاحظة: الطلاب الذين سجلوا من أجهزتهم سيحتاجون لمسح بيانات المتصفح لإعادة التسجيل.');
+            const totalRecords = attendanceSnapshot.size + devicesSnapshot.size;
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور والأجهزة المسجلة؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 سيتم مسح:\n- ' + attendanceSnapshot.size + ' سجل حضور\n- ' + devicesSnapshot.size + ' جهاز مسجل');
             
             if (confirmReset) {
-                const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + querySnapshot.size + ' طالب/طالبة. هل تريد المتابعة؟');
+                const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + totalRecords + ' سجل. هل تريد المتابعة؟');
                 
                 if (doubleConfirm) {
                     const deletePromises = [];
-                    querySnapshot.forEach((document) => {
+                    
+                    // مسح سجلات الحضور
+                    attendanceSnapshot.forEach((document) => {
                         deletePromises.push(db.collection('attendance').doc(document.id).delete());
                     });
                     
+                    // مسح الأجهزة المسجلة
+                    devicesSnapshot.forEach((document) => {
+                        deletePromises.push(db.collection('registeredDevices').doc(document.id).delete());
+                    });
+                    
                     await Promise.all(deletePromises);
-                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n📌 تذكير: الطلاب يحتاجون لمسح بيانات المتصفح للتسجيل مجدداً من نفس الجهاز.');
+                    alert('✅ تم مسح الحضور والأجهزة المسجلة بنجاح. جاهز لمحاضرة جديدة!\n\n📌 الطلاب يمكنهم الآن التسجيل من جديد من نفس الأجهزة.');
+                    
+                    // تحديث الإحصائيات
+                    loadAttendanceData();
                 }
             }
         }
@@ -1277,7 +1289,7 @@
         });
 
         /* ================== نظام QR المتجدد ================== */
-        const QR_CHANGE_TIME = 15;          // مدة صلاحية QR بالثواني
+        const QR_CHANGE_TIME = 20;          // مدة صلاحية QR بالثواني
         const QR_DOCTOR_PASSWORD = "D123321";  // نفس كلمة سر لوحة التحكم
         
         let qrInterval;
@@ -1346,7 +1358,7 @@
         if (urlToken) {
             // استخدام الدالة الجديدة للتحقق مع السماحية
             if (!isTokenValid(urlToken)) {
-                // التوكن منتهي (أكثر من 15 ثانية)
+                // التوكن منتهي (أكثر من 20 ثانية)
                 document.body.innerHTML = `
                     <div style="text-align:center;margin-top:100px;">
                         <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
@@ -1355,7 +1367,7 @@
                     </div>
                 `;
             } else {
-                // التوكن صالح (ضمن 15 ثانية)
+                // التوكن صالح (ضمن 20 ثانية)
                 hasValidToken = true;
             }
         } else {
