@@ -1278,6 +1278,7 @@
 
         /* ================== نظام QR المتجدد ================== */
         const QR_CHANGE_TIME = 10;          // مدة صلاحية QR بالثواني
+        const QR_GRACE_PERIOD = 5;          // سماحية إضافية بالثواني
         const QR_DOCTOR_PASSWORD = "D123321";  // نفس كلمة سر لوحة التحكم
         
         let qrInterval;
@@ -1286,6 +1287,22 @@
         /* توليد Token بناءً على الوقت الحالي */
         function generateToken() {
             return Math.floor(Date.now() / (QR_CHANGE_TIME * 1000));
+        }
+        
+        /* التحقق من صلاحية التوكن مع السماحية */
+        function isTokenValid(urlToken) {
+            const currentToken = generateToken();
+            const tokenNumber = parseInt(urlToken);
+            
+            // حساب الوقت الحالي بالثواني
+            const currentTimeSeconds = Math.floor(Date.now() / 1000);
+            // حساب وقت التوكن المُدخل بالثواني
+            const tokenTimeSeconds = tokenNumber * QR_CHANGE_TIME;
+            // الفرق بالثواني
+            const timeDiff = currentTimeSeconds - tokenTimeSeconds;
+            
+            // قبول التوكن إذا كان ضمن السماحية (0 إلى QR_CHANGE_TIME + QR_GRACE_PERIOD)
+            return (timeDiff >= 0 && timeDiff <= (QR_CHANGE_TIME + QR_GRACE_PERIOD));
         }
         
         /* توليد QR Code جديد */
@@ -1335,11 +1352,9 @@
         const urlToken = params.get("token");
         
         if (urlToken) {
-            const currentToken = generateToken();
-            // قبول التوكن الحالي فقط (لا سماحية)
-            
-            if (parseInt(urlToken) !== currentToken) {
-                // التوكن منتهي
+            // استخدام الدالة الجديدة للتحقق مع السماحية
+            if (!isTokenValid(urlToken)) {
+                // التوكن منتهي (أكثر من 15 ثانية)
                 document.body.innerHTML = `
                     <div style="text-align:center;margin-top:100px;">
                         <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
@@ -1348,7 +1363,7 @@
                     </div>
                 `;
             } else {
-                // التوكن صالح
+                // التوكن صالح (ضمن 15 ثانية)
                 hasValidToken = true;
             }
         } else {
