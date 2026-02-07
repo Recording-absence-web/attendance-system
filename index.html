@@ -924,6 +924,13 @@
                 showMessage('⚠️ التحضير مقفل حالياً! الرجاء الانتظار حتى يفتحه الدكتور', 'error', 'message');
                 return;
             }
+
+            // التحقق من أن الجهاز لم يسجل مسبقاً
+            const deviceRegistered = localStorage.getItem('attendance_registered');
+            if (deviceRegistered) {
+                showMessage('⚠️ هذا الجهاز سجل الحضور مسبقاً! لا يمكن التسجيل مرة أخرى', 'error', 'message');
+                return;
+            }
             
             if (!studentName) {
                 showMessage('الرجاء إدخال الاسم الكامل', 'error', 'message');
@@ -990,9 +997,19 @@
 
                 await db.collection('attendance').add(record);
 
+                // حفظ أن الجهاز سجل الحضور
+                localStorage.setItem('attendance_registered', 'true');
+                localStorage.setItem('attendance_student_name', studentName);
+
                 showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
                 document.getElementById('studentName').value = '';
                 document.getElementById('studentId').value = '';
+                
+                // تعطيل النموذج بعد التسجيل
+                document.getElementById('studentName').disabled = true;
+                document.getElementById('studentId').disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.textContent = '✅ تم التسجيل';
                 
             } catch (error) {
                 console.error('Error recording attendance:', error);
@@ -1070,6 +1087,22 @@
                 document.body.classList.add('dark-mode');
                 themeIcon.textContent = '☀️';
                 themeText.textContent = 'الوضع النهاري';
+            }
+
+            // التحقق من حالة التسجيل المسبق
+            const deviceRegistered = localStorage.getItem('attendance_registered');
+            const studentName = localStorage.getItem('attendance_student_name');
+            
+            if (deviceRegistered && hasValidToken) {
+                const message = document.getElementById('message');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                showMessage('✅ تم تسجيل حضورك مسبقاً يا ' + (studentName || 'طالب/ة') + '!', 'success', 'message');
+                
+                document.getElementById('studentName').disabled = true;
+                document.getElementById('studentId').disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.textContent = '✅ تم التسجيل';
             }
         });
 
@@ -1207,7 +1240,7 @@
                 return;
             }
 
-            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!');
+            const confirmReset = confirm('⚠️ هل أنت متأكد من مسح جميع بيانات الحضور؟\n\nننصح بتصدير البيانات أولاً قبل المسح!\n\n📱 ملاحظة: الطلاب الذين سجلوا من أجهزتهم سيحتاجون لمسح بيانات المتصفح لإعادة التسجيل.');
             
             if (confirmReset) {
                 const doubleConfirm = confirm('تأكيد نهائي: سيتم حذف ' + querySnapshot.size + ' طالب/طالبة. هل تريد المتابعة؟');
@@ -1219,7 +1252,7 @@
                     });
                     
                     await Promise.all(deletePromises);
-                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!');
+                    alert('✅ تم مسح الحضور بنجاح. جاهز لمحاضرة جديدة!\n\n📌 تذكير: الطلاب يحتاجون لمسح بيانات المتصفح للتسجيل مجدداً من نفس الجهاز.');
                 }
             }
         }
