@@ -745,6 +745,42 @@
             }
         }
 
+        /* تعديلات الدارك مود للجوال */
+        @media (max-width: 600px) {
+            body.dark-mode::before {
+                width: 300px;
+                height: 300px;
+                top: -150px;
+                right: -150px;
+            }
+            
+            body.dark-mode::after {
+                width: 350px;
+                height: 350px;
+                bottom: -150px;
+                left: -150px;
+            }
+
+            body.dark-mode .container {
+                padding: 20px;
+            }
+
+            body.dark-mode .logo {
+                width: 70px;
+                height: 70px;
+                font-size: 35px;
+            }
+
+            body.dark-mode h1 {
+                font-size: 22px;
+            }
+
+            body.dark-mode .theme-toggle {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+
     </style>
 
 </head>
@@ -1267,8 +1303,8 @@
         
         if (urlToken) {
             const currentToken = generateToken();
-            // سماحية دورة واحدة فقط
-            if (Math.abs(currentToken - urlToken) > 1) {
+            // فحص صارم: قبول التوكن الحالي فقط (لا سماحية)
+            if (parseInt(urlToken) !== currentToken) {
                 document.body.innerHTML = `
                     <div style="text-align:center;margin-top:100px;">
                         <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
