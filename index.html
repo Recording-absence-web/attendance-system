@@ -1382,34 +1382,35 @@
                 return Math.ceil(remainingMs / 1000); // تحويل لثواني
             }
             
-            // توليد QR وضبط العداد
-            function updateQR() {
-                generateDynamicQR();
-                qrTimeLeft = getRemainingTime();
-                
-                const timerEl = document.getElementById("qrTimer");
-                if (timerEl) {
-                    timerEl.innerText = qrTimeLeft;
-                }
-            }
+            // متغير لتتبع التوكن الحالي
+            let currentToken = generateToken();
             
-            // بدء أول QR
-            updateQR();
+            // توليد QR أول مرة
+            generateDynamicQR();
             
-            // تحديث العداد كل ثانية
+            // تحديث العداد والQR كل ثانية
             qrInterval = setInterval(() => {
-                qrTimeLeft = getRemainingTime();
+                const remaining = getRemainingTime();
+                const newToken = generateToken();
                 
+                // تحديث العداد
                 const timerEl = document.getElementById("qrTimer");
                 if (timerEl) {
-                    timerEl.innerText = qrTimeLeft;
+                    timerEl.innerText = remaining;
                 }
                 
-                // إذا وصل الوقت للصفر، جدد QR
-                if (qrTimeLeft <= 0) {
-                    updateQR();
+                // إذا تغير التوكن، جدد QR
+                if (newToken !== currentToken) {
+                    currentToken = newToken;
+                    generateDynamicQR();
                 }
             }, 1000);
+            
+            // تحديث العداد للمرة الأولى
+            const timerEl = document.getElementById("qrTimer");
+            if (timerEl) {
+                timerEl.innerText = getRemainingTime();
+            }
         }
         
         /* إعادة تعيين QR Code والوقت */
