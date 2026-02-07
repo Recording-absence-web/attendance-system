@@ -978,8 +978,15 @@
         function showBlockedMessage() {
             const mainContent = document.getElementById('mainContent');
             if (mainContent) {
-            document.getElementById('studentView').style.display = 'none';
-            document.getElementById('adminLogin').style.display = 'block';
+                mainContent.innerHTML = `
+                    <div class="container" style="text-align:center;">
+                        <h1 style="font-size:80px;margin:0;">🔒</h1>
+                        <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                        <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                        <br>
+                        <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                    </div>
+                `;
             }
         }
 
@@ -1321,8 +1328,18 @@
                     const isOpen = await checkAttendanceOpen();
                     const mainContent = document.getElementById('mainContent');
                     if (mainContent) {
-                 document.getElementById('studentView').style.display = 'none';
-                document.getElementById('adminLogin').style.display = 'block';
+                        mainContent.innerHTML = `
+                            <div class="container" style="text-align:center;">
+                                <h1 style="font-size:80px;margin:0;">📱</h1>
+                                <h2 style="color:#06beb6;margin:20px 0;">امسح QR Code من الدكتور</h2>
+                                <p style="color:#666;font-size:18px;">يجب مسح QR Code لتسجيل الحضور</p>
+                                ${isOpen ? '<p style="color:#28a745;font-weight:600;margin-top:20px;">✅ التحضير مفتوح الآن</p>' : '<p style="color:#dc3545;font-weight:600;margin-top:20px;">🔒 التحضير مغلق حالياً</p>'}
+                                <br>
+                                <a href="#" onclick="location.reload()" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔄 تحديث الصفحة</a>
+                                <br><br>
+                                <a href="#" onclick="showAdminLogin();return false" style="color:#999;text-decoration:none;font-size:14px;">🔑 دخول الدكتور</a>
+                            </div>
+                        `;
                     }
                 })();
             } else {
@@ -1332,8 +1349,15 @@
                     if (!isOpen) {
                         const mainContent = document.getElementById('mainContent');
                         if (mainContent) {
-                           document.getElementById('studentView').style.display = 'none';
-                            document.getElementById('adminLogin').style.display = 'block';
+                            mainContent.innerHTML = `
+                                <div class="container" style="text-align:center;">
+                                    <h1 style="font-size:80px;margin:0;">🔒</h1>
+                                    <h2 style="color:#dc3545;margin:20px 0;">التحضير مغلق حالياً</h2>
+                                    <p style="color:#666;font-size:18px;">انتظر فتح التحضير من الدكتور</p>
+                                    <br>
+                                    <a href="#" onclick="showAdminLogin();return false" style="color:#06beb6;text-decoration:none;font-size:16px;font-weight:600;">🔑 دخول الدكتور</a>
+                                </div>
+                            `;
                         }
                         return;
                     }
