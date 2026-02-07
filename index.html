@@ -26,25 +26,6 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        
-        // ==================== تعريف الدوال العامة مباشرة ====================
-        window.showAdminLogin = function() {
-            const mainContent = document.getElementById('mainContent');
-            if (mainContent) {
-                document.getElementById('studentView').style.display = 'none';
-                document.getElementById('adminLogin').style.display = 'block';
-                document.getElementById('adminPanel').style.display = 'none';
-            } else {
-                // إذا تم استبدال المحتوى، نعيد تحميل الصفحة مع معامل خاص
-                window.location.href = window.location.pathname + '?admin=1';
-            }
-        };
-
-        window.showStudentView = function() {
-            document.getElementById('studentView').style.display = 'block';
-            document.getElementById('adminLogin').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'none';
-        };
     </script>
     
     <style>
@@ -100,6 +81,7 @@
             align-items: center;
             justify-content: center;
             font-size: 40px;
+            animation: float 3s ease-in-out infinite;
         }
 
         h1 {
@@ -318,6 +300,41 @@
             background: #5a6268;
         }
 
+        /* زر فتح/إقفال التحضير */
+        .toggle-attendance-btn {
+            margin-top: 15px;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-attendance-btn.open {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .toggle-attendance-btn.open:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .toggle-attendance-btn.closed {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .toggle-attendance-btn.closed:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
+            transform: translateY(-2px);
+        }
+
         /* قسم QR المتجدد */
         .qr-container {
             margin-top: 20px;
@@ -428,6 +445,16 @@
             box-shadow: 0 6px 20px rgba(6, 190, 182, 0.6);
         }
 
+        /* حركة طفو للإيموجي في الوضع النهاري - مثل المسائي */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        body.dark-mode .logo {
+            animation: float 3s ease-in-out infinite;
+        }
+
         /* ==================== الدارك مود ==================== */
         body.dark-mode {
             background: #0a0e27;
@@ -478,12 +505,6 @@
         body.dark-mode .logo {
             background: linear-gradient(135deg, #00ffff 0%, #8a2be2 100%);
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
         }
 
         body.dark-mode h1 {
@@ -734,137 +755,139 @@
         <span id="themeText">الوضع الليلي</span>
     </button>
 
-    <div id="mainContent">
-        <!-- Student Attendance Form -->
-        <div class="container" id="studentView">
-            <div class="header">
-                <div class="logo">📋</div>
-                <h1>نظام الحضور الإلكتروني</h1>
-                <p class="subtitle">سجل حضورك بسرعة وسهولة <span class="online-indicator"></span></p>
+    <!-- Student Attendance Form -->
+    <div class="container" id="studentView">
+        <div class="header">
+            <div class="logo">📋</div>
+            <h1>نظام الحضور الإلكتروني</h1>
+            <p class="subtitle">سجل حضورك بسرعة وسهولة <span class="online-indicator"></span></p>
+        </div>
+
+        <div class="input-group">
+            <label for="studentName">الاسم الكامل (ثلاثي)</label>
+            <input type="text" id="studentName" placeholder="مثال: محمد أحمد العلي">
+        </div>
+
+        <div class="input-group">
+            <label for="studentId">الرقم الجامعي (8 أرقام)</label>
+            <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
+        </div>
+
+        <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
+
+        <div class="message" id="message"></div>
+
+        <div class="admin-link">
+            <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div class="container" id="adminLogin" style="display: none;">
+        <div class="header">
+            <div class="logo">🔐</div>
+            <h1>دخول لوحة التحكم</h1>
+            <p class="subtitle">للدكتور فقط</p>
+        </div>
+
+        <div class="input-group">
+            <label for="adminPassword">كلمة المرور</label>
+            <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
+        </div>
+
+        <button class="btn" onclick="adminLogin()">دخول</button>
+
+        <div class="message" id="loginMessage"></div>
+
+        <div class="admin-link">
+            <a href="#" onclick="showStudentView(); return false;">← العودة لصفحة الطلاب</a>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="container" id="adminPanel" style="display: none; max-width: 800px;">
+        <div class="header">
+            <div class="logo">📊</div>
+            <h1>لوحة تحكم الدكتور</h1>
+            <p class="subtitle">إدارة الحضور والإحصائيات <span class="online-indicator"></span></p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">إجمالي الحضور</div>
             </div>
-
-            <div class="input-group">
-                <label for="studentName">الاسم الكامل (ثلاثي)</label>
-                <input type="text" id="studentName" placeholder="مثال: محمد أحمد العلي">
-            </div>
-
-            <div class="input-group">
-                <label for="studentId">الرقم الجامعي (8 أرقام)</label>
-                <input type="text" id="studentId" placeholder="مثال: 12345678" maxlength="8" pattern="\d*" inputmode="numeric">
-            </div>
-
-            <button class="btn" onclick="recordAttendance()" id="submitBtn">✓ تسجيل الحضور</button>
-
-            <div class="message" id="message"></div>
-
-            <div class="admin-link">
-                <a href="#" onclick="showAdminLogin(); return false;">🔑 دخول الدكتور</a>
+            <div class="stat-card">
+                <div class="stat-number" id="todayDate">-</div>
+                <div class="stat-label">التاريخ</div>
             </div>
         </div>
 
-        <!-- Admin Login -->
-        <div class="container" id="adminLogin" style="display: none;">
-            <div class="header">
-                <div class="logo">🔐</div>
-                <h1>دخول لوحة التحكم</h1>
-                <p class="subtitle">للدكتور فقط</p>
+        <div class="attendance-table">
+            <div class="table-header">
+                <div>الاسم</div>
+                <div>الرقم الجامعي</div>
+                <div>الوقت</div>
             </div>
-
-            <div class="input-group">
-                <label for="adminPassword">كلمة المرور</label>
-                <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
-            </div>
-
-            <button class="btn" onclick="adminLogin()">دخول</button>
-
-            <div class="message" id="loginMessage"></div>
-
-            <div class="admin-link">
-                <a href="#" onclick="showStudentView(); return false;">← العودة لصفحة الطلاب</a>
+            <div id="attendanceTableBody">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>جاري تحميل البيانات...</p>
+                </div>
             </div>
         </div>
 
-        <!-- Admin Panel -->
-        <div class="container" id="adminPanel" style="display: none; max-width: 800px;">
-            <div class="header">
-                <div class="logo">📊</div>
-                <h1>لوحة تحكم الدكتور</h1>
-                <p class="subtitle">إدارة الحضور والإحصائيات <span class="online-indicator"></span></p>
+        <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
+        
+        <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
+        
+        <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
+
+        <!-- زر فتح/إقفال التحضير -->
+        <button id="toggleAttendanceBtn" class="toggle-attendance-btn open" onclick="toggleAttendanceStatus()">
+            🔓 التحضير مفتوح
+        </button>
+
+        <!-- قسم QR المتجدد -->
+        <div class="qr-container">
+            <h3 class="qr-title">📱 QR Code المتجدد</h3>
+            <div id="dynamicQRCode" class="qr-code-wrapper"></div>
+            <div class="qr-timer-section">
+                <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">10</span> ثانية</p>
+                <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 10 ثواني</p>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalStudents">0</div>
-                    <div class="stat-label">إجمالي الحضور</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="todayDate">-</div>
-                    <div class="stat-label">التاريخ</div>
-                </div>
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <div class="stat-number" id="attendanceStatus" style="font-size: 24px;">🔒 مغلق</div>
-                    <div class="stat-label">حالة التحضير</div>
-                </div>
-            </div>
-
-            <div class="attendance-table">
-                <div class="table-header">
-                    <div>الاسم</div>
-                    <div>الرقم الجامعي</div>
-                    <div>الوقت</div>
-                </div>
-                <div id="attendanceTableBody">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>جاري تحميل البيانات...</p>
-                    </div>
-                </div>
-            </div>
-
-            <button class="export-btn" onclick="exportToCSV()">📥 تصدير جميع المعلومات Excel</button>
-            
-            <button class="export-btn" onclick="exportIDsOnly()" style="background: #17a2b8; margin-top: 10px;">🔢 تصدير الأرقام الجامعية فقط Excel</button>
-            
-            <button class="export-btn" onclick="resetAttendance()" style="background: #dc3545; margin-top: 10px;">🔄 مسح الحضور (محاضرة جديدة)</button>
-            
-            <button class="export-btn" onclick="openAttendance()" style="background:#28a745; margin-top:10px">
-                🟢 فتح التحضير
-            </button>
-
-            <button class="export-btn" onclick="closeAttendance()" style="background:#6c757d; margin-top:10px">
-                🔒 إغلاق التحضير
-            </button>
-
-            <!-- قسم QR المتجدد -->
-            <div class="qr-container">
-                <h3 class="qr-title">📱 QR Code المتجدد</h3>
-                <div id="dynamicQRCode" class="qr-code-wrapper"></div>
-                <div class="qr-timer-section">
-                    <p class="qr-timer-text">⏳ يتغير خلال: <span id="qrTimer" class="qr-timer-number">10</span> ثانية</p>
-                    <p class="qr-hint">📌 الطلاب يجب عليهم مسح الكود خلال 10 ثواني</p>
-                </div>
-            </div>
-
-            <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
         </div>
+
+        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
     </div>
 
     <script>
         // Admin password
         const ADMIN_PASSWORD = "D123321";
         
+        // حالة التحضير (مفتوح/مقفل)
+        let isAttendanceOpen = true;
+        
+        // التحقق من صلاحية الدخول (من QR Code أو مباشرة)
+        let hasValidToken = false;
+        
         async function recordAttendance() {
-            // التحقق من فتح التحضير
-            const isOpen = await checkAttendanceOpen();
-            if (!isOpen) {
-                showBlockedMessage();
-                return;
-            }
-
             const studentName = document.getElementById('studentName').value.trim();
             const studentId = document.getElementById('studentId').value.trim();
             const message = document.getElementById('message');
             const submitBtn = document.getElementById('submitBtn');
+            
+            // التحقق من الدخول من QR Code
+            if (!hasValidToken) {
+                showMessage('⚠️ يجب عليك الدخول من خلال مسح QR Code من الدكتور!', 'error', 'message');
+                return;
+            }
+            
+            // التحقق من حالة التحضير
+            if (!isAttendanceOpen) {
+                showMessage('⚠️ التحضير مقفل حالياً! الرجاء الانتظار حتى يفتحه الدكتور', 'error', 'message');
+                return;
+            }
             
             if (!studentName) {
                 showMessage('الرجاء إدخال الاسم الكامل', 'error', 'message');
@@ -931,11 +954,6 @@
 
                 await db.collection('attendance').add(record);
 
-                // حفظ حالة التسجيل على الجهاز
-                const deviceId = getDeviceId();
-                const registrationTime = new Date().toLocaleString('ar-SA');
-                localStorage.setItem('attendance_registered_' + deviceId, registrationTime);
-
                 showMessage('✅ تم تسجيل حضورك بنجاح يا ' + studentName + '!', 'success', 'message');
                 document.getElementById('studentName').value = '';
                 document.getElementById('studentId').value = '';
@@ -975,14 +993,16 @@
             };
         }
 
-        function showBlockedMessage() {
-            const mainContent = document.getElementById('mainContent');
-            if (mainContent) {
-           document.getElementById('studentView').style.display = 'none';
-document.getElementById('adminLogin').style.display = 'none';
+        function showAdminLogin() {
+            document.getElementById('studentView').style.display = 'none';
+            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
 
-alert('🔒 التحضير مغلق حالياً');
-            }
+        function showStudentView() {
+            document.getElementById('studentView').style.display = 'block';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
         }
 
         /* ==================== نظام التبديل بين الأوضاع ==================== */
@@ -1042,10 +1062,6 @@ alert('🔒 التحضير مغلق حالياً');
         }
 
         async function loadAdminPanel() {
-            // تحديث حالة التحضير
-            const isOpen = await checkAttendanceOpen();
-            updateAttendanceStatus(isOpen);
-            
             // Set up real-time listener
             db.collection('attendance')
                 .orderBy('timestamp', 'desc')
@@ -1172,66 +1188,6 @@ alert('🔒 التحضير مغلق حالياً');
             }
         }
 
-        /* ================== نظام فتح/إغلاق التحضير ================== */
-        async function openAttendance() {
-            await db.collection("settings").doc("attendance").set({ isOpen: true });
-            updateAttendanceStatus(true);
-            startDynamicQR();
-            
-            // مسح سجل الأجهزة المسجلة (محاضرة جديدة)
-            const clearDevices = confirm("هل تريد مسح سجل الأجهزة المسجلة؟\n(اختر نعم لمحاضرة جديدة، لا للاستمرار)");
-            if (clearDevices) {
-                // إرسال إشارة لمسح localStorage للطلاب
-                await db.collection("settings").doc("attendance").update({ 
-                    isOpen: true,
-                    clearDevices: Date.now() // timestamp لمسح الأجهزة
-                });
-                alert("🟢 تم فتح التحضير وإعادة تعيين الأجهزة - جاهز لمحاضرة جديدة");
-            } else {
-                alert("🟢 تم فتح التحضير - يمكن للطلاب الآن مسح QR Code");
-            }
-        }
-
-        async function closeAttendance() {
-            await db.collection("settings").doc("attendance").set({ isOpen: false });
-            updateAttendanceStatus(false);
-            if (qrInterval) clearInterval(qrInterval);
-            alert("🔒 تم إغلاق التحضير - لن يتمكن الطلاب من تسجيل الحضور");
-        }
-
-        async function checkAttendanceOpen() {
-            const doc = await db.collection("settings").doc("attendance").get();
-            return doc.exists && doc.data().isOpen === true;
-        }
-
-        function updateAttendanceStatus(isOpen) {
-            const statusEl = document.getElementById('attendanceStatus');
-            if (statusEl) {
-                if (isOpen) {
-                    statusEl.innerHTML = '🟢 مفتوح';
-                    statusEl.parentElement.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                } else {
-                    statusEl.innerHTML = '🔒 مغلق';
-                    statusEl.parentElement.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
-                }
-            }
-        }
-        
-        /* مراقبة إشارة مسح الأجهزة */
-        db.collection("settings").doc("attendance").onSnapshot((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                const lastClear = localStorage.getItem('last_device_clear');
-                
-                if (data.clearDevices && (!lastClear || data.clearDevices > parseInt(lastClear))) {
-                    // مسح جميع سجلات التسجيل على الجهاز
-                    const deviceId = getDeviceId();
-                    localStorage.removeItem('attendance_registered_' + deviceId);
-                    localStorage.setItem('last_device_clear', data.clearDevices.toString());
-                }
-            }
-        });
-
         // Allow Enter key to submit
         document.getElementById('studentId').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -1306,89 +1262,78 @@ alert('🔒 التحضير مغلق حالياً');
         }
         
         /* التحقق من صلاحية QR عند دخول الطالب */
-        document.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            const urlToken = params.get("token");
-            const adminParam = params.get("admin");
-            
-            // إذا المستخدم طلب دخول الدكتور
-            if (adminParam === '1') {
-                showAdminLogin();
-                return;
-            }
-            // حماية قوية: لازم يكون في token (QR Code)
-            else if (!urlToken) {
-                // منع الوصول المباشر - لازم QR Code
-                (async () => {
-                    const isOpen = await checkAttendanceOpen();
-                    const mainContent = document.getElementById('mainContent');
-                    if (mainContent) {
-                    document.getElementById('studentView').style.display = 'block';
-document.getElementById('adminLogin').style.display = 'none';
-document.getElementById('adminPanel').style.display = 'none';    
-                    }
-                })();
-            } else {
-                // إذا في token، نتحقق من صلاحيته
-                (async () => {
-                    const isOpen = await checkAttendanceOpen();
-                    if (!isOpen) {
-                        const mainContent = document.getElementById('mainContent');
-                        if (mainContent) {
-                         document.getElementById('studentView').style.display = 'none';
-document.getElementById('adminLogin').style.display = 'none';
-
-alert('🔒 التحضير مغلق حالياً'); 
-                        }
-                        return;
-                    }
-                    
-                    // ثم التحقق من صلاحية QR Token
-                    const currentToken = generateToken();
-                    // سماحية دورة واحدة فقط
-                    if (Math.abs(currentToken - urlToken) > 1) {
-                        const mainContent = document.getElementById('mainContent');
-                        if (mainContent) {
-                            mainContent.innerHTML = `
-                                <div class="container" style="text-align:center;">
-                                    <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
-                                    <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
-                                    <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
-                                </div>
-                            `;
-                        }
-                        return;
-                    }
-                    
-                    // التحقق من التسجيل السابق على نفس الجهاز
-                    const deviceId = getDeviceId();
-                    const hasRegistered = localStorage.getItem('attendance_registered_' + deviceId);
-                    
-                    if (hasRegistered) {
-                        const mainContent = document.getElementById('mainContent');
-                        if (mainContent) {
-                            mainContent.innerHTML = `
-                                <div class="container" style="text-align:center;">
-                                    <h1 style="font-size:80px;margin:0;">✅</h1>
-                                    <h2 style="color:#28a745;margin:20px 0;">تم تسجيل حضورك مسبقاً</h2>
-                                    <p style="color:#666;font-size:18px;">لا يمكنك التسجيل مرتين من نفس الجهاز</p>
-                                    <p style="color:#999;font-size:14px;margin-top:10px;">آخر تسجيل: ${hasRegistered}</p>
-                                </div>
-                            `;
-                        }
-                    }
-                })();
-            }
-        });
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get("token");
         
-        /* دالة توليد معرف فريد للجهاز */
-        function getDeviceId() {
-            let deviceId = localStorage.getItem('device_id');
-            if (!deviceId) {
-                deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('device_id', deviceId);
+        if (urlToken) {
+            const currentToken = generateToken();
+            // سماحية دورة واحدة فقط
+            if (Math.abs(currentToken - urlToken) > 1) {
+                document.body.innerHTML = `
+                    <div style="text-align:center;margin-top:100px;">
+                        <h1 style="color:#dc3545;font-size:48px;">⏰</h1>
+                        <h2 style="color:#dc3545;">انتهت صلاحية الكود</h2>
+                        <p style="color:#666;">الرجاء مسح QR Code الجديد من الدكتور</p>
+                    </div>
+                `;
+            } else {
+                // التوكن صالح
+                hasValidToken = true;
             }
-            return deviceId;
+        } else {
+            // لا يوجد توكن - الدخول مباشرة بدون QR
+            // نخفي نموذج التسجيل ونعرض رسالة
+            const studentView = document.getElementById('studentView');
+            if (studentView) {
+                studentView.innerHTML = `
+                    <div class="header">
+                        <div class="logo">🔒</div>
+                        <h1>يجب الدخول من QR Code</h1>
+                        <p class="subtitle" style="color: #dc3545; font-weight: 600; margin-top: 20px;">
+                            ⚠️ للتسجيل، يجب عليك مسح QR Code من شاشة الدكتور
+                        </p>
+                        <div style="margin-top: 30px; padding: 20px; background: #f8d7da; border-radius: 10px; border: 2px solid #f5c6cb;">
+                            <p style="color: #721c24; font-weight: 600;">📱 لا يمكن الدخول المباشر لهذه الصفحة</p>
+                        </div>
+                    </div>
+                    <div class="admin-link" style="margin-top: 30px;">
+                        <a href="#" onclick="showAdminLogin(); return false;">🔒 دخول الدكتور</a>
+                    </div>
+                `;
+            }
+        }
+
+        /* ================== وظيفة فتح/إقفال التحضير ================== */
+        function toggleAttendanceStatus() {
+            const btn = document.getElementById('toggleAttendanceBtn');
+            
+            if (isAttendanceOpen) {
+                // إقفال التحضير
+                isAttendanceOpen = false;
+                btn.classList.remove('open');
+                btn.classList.add('closed');
+                btn.innerHTML = '🔒 التحضير مقفل';
+                
+                // إيقاف QR Code
+                if (qrInterval) {
+                    clearInterval(qrInterval);
+                }
+                const qrDiv = document.getElementById("dynamicQRCode");
+                if (qrDiv) {
+                    qrDiv.innerHTML = '<p style="background: #dc3545; color: white; padding: 30px; font-size: 18px; border-radius: 10px; font-weight: 600;">⛔ التحضير مقفل حالياً</p>';
+                }
+                document.getElementById("qrTimer").innerText = '-';
+                
+            } else {
+                // فتح التحضير
+                isAttendanceOpen = true;
+                btn.classList.remove('closed');
+                btn.classList.add('open');
+                btn.innerHTML = '🔓 التحضير مفتوح';
+                
+                // تشغيل QR Code من جديد
+                startDynamicQR();
+            }
         }
     </script>
 </body>
